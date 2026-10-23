@@ -52,6 +52,59 @@
   --transition-normal: 0.25s ease;
 }
 
+/* Project Switcher Styling */
+.project-switcher-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 4px 6px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+}
+.project-pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.project-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.project-pill:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.project-pill.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+[data-theme="light"] .project-pill.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+}
+.project-pill .proj-icon {
+  font-size: 15px;
+}
+.project-pill .proj-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
 [data-theme="light"] {
   --bg-primary: #f8fafc;
   --bg-secondary: #f1f5f9;
@@ -108,6 +161,12 @@ body {
   gap: 16px;
 }
 
+@media (min-width: 1280px) {
+  .app-header {
+    flex-wrap: nowrap;
+  }
+}
+
 .brand-section {
   display: flex;
   align-items: center;
@@ -160,7 +219,10 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  margin-left: auto;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .btn-icon {
@@ -217,6 +279,71 @@ body {
 .btn-secondary:hover {
   background: var(--bg-card-hover);
   border-color: var(--text-muted);
+}
+
+/* Contractor Scope Selector Bar */
+.contractor-scope-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.contractor-nav-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 8px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contractor-tab {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.contractor-tab:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.contractor-tab.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+.contractor-tab .tab-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
 }
 
 /* Document Category Selector Bar */
@@ -1500,6 +1627,36 @@ body {
 }
 
 /* Category & Package Sliding Bars in Light Mode */
+[data-theme="light"] .contractor-scope-nav {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .contractor-nav-label {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+[data-theme="light"] .contractor-tab {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+  font-weight: 600;
+}
+
+[data-theme="light"] .contractor-tab:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+[data-theme="light"] .contractor-tab.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
 [data-theme="light"] .doc-category-nav {
   background: #ffffff;
   border-color: #cbd5e1;

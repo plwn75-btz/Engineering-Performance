@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ASK Document Intelligence Hub - Analytic Evaluation (Rebaseline vs Actual)</title>
-  <meta name="description" content="Forensic evaluation of Contractor REBASELINE PLAN vs Actual Revision Cycle Turnaround: Root Cause Delay Attribution across Improper Planning, Contractor Incorporation, and Client Review SLA.">
+  <title>Z1F Document Intelligence Hub - Analytic Evaluation (Rebaseline vs Actual)</title>
+  <meta name="description" content="Forensic evaluation of Contractor REBASELINE PLAN vs Actual Revision Cycle Turnaround: Root Cause Delay Attribution across Improper Planning, Contractor Incorporation, and Client Review SLA for Z1F Project.">
   <link rel="stylesheet" href="styles_analytics.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
     <nav class="dashboard-switcher" id="dashboardSwitcher">
       <div class="switcher-brand">
         <span class="pulse-dot"></span>
-        <span class="switcher-label">ASK Project Document Intelligence Hub</span>
+        <span class="switcher-label">Z1F and ASK Project Document Intelligence Hub</span>
       </div>
       <div class="switcher-links">
         <a href="index.html" class="switch-btn">
@@ -31,7 +31,7 @@
         </a>
         <a href="index_mdr.html" class="switch-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
-          MDR Revision Lifecycle Dashboard
+          EDSR Revision Lifecycle Dashboard
         </a>
         <a href="index_analytics.html" class="switch-btn active">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -52,18 +52,20 @@
         </div>
         <div class="brand-title">
           <div class="title-row">
-            <h1>Analytic Evaluation: Rebaseline Plan vs. Actual Turnaround</h1>
+            <h1><span id="projectHeaderTitlePrefix">Z1F</span> Analytic Evaluation: Rebaseline Plan vs. Actual Turnaround</h1>
             <span class="badge-tag live-badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99, 102, 241, 0.4);">FORENSIC ENGINE</span>
           </div>
           <div class="brand-subtitle">
-            <span>Contractor Rebaseline Plan Verification &bull; <span id="headerReportDate">Cut-off 18-Sep-26</span></span>
+            <span>Contractor Rebaseline Plan Verification &bull; <span id="headerReportDate">Cut-off 16-Oct-26</span></span>
             <span class="separator">&bull;</span>
-            <span id="headerTotalBadge" class="doc-count-pill">2,639 Evaluated Transitions</span>
+            <span id="headerTotalBadge" class="doc-count-pill">4,154 Evaluated Transitions</span>
           </div>
         </div>
       </div>
       
       <div class="header-actions">
+        <!-- Project Switcher Pill Group (Z1F vs ASK) -->
+        <div id="projectSwitcher" class="project-switcher-container"></div>
         <button class="action-btn" id="openSlaDefBtn" title="View SLA, Incorporation Rights & Forensic Methodology">
           ℹ️ What is SLA & Criteria?
         </button>
@@ -252,33 +254,29 @@
 
     </section>
 
-    <!-- Work Package Scope Selector -->
+    <!-- Contractor Scope Selector -->
     <section class="wp-tabs-section">
-      <div class="section-label">SELECT WORK PACKAGE SCOPE:</div>
+      <div class="section-label">SELECT CONTRACTOR SCOPE:</div>
       <div class="wp-tabs" id="wpTabsContainer">
         <button class="wp-tab active" data-wp="ALL">
-          <span class="wp-name">All Work Packages</span>
-          <span class="wp-count" id="tabCountAll">2,639</span>
+          <span class="wp-name">All Contractors</span>
+          <span class="wp-count" id="tabCountAll">4,290</span>
         </button>
-        <button class="wp-tab" data-wp="WP01 TOPSIDE">
-          <span class="wp-name">WP01 Topside</span>
-          <span class="wp-count" id="tabCountWP01Top">-</span>
+        <button class="wp-tab" data-wp="Topside without Structure">
+          <span class="wp-name">Topside without Structure</span>
+          <span class="wp-count" id="tabCountTopsideNoStr">-</span>
         </button>
-        <button class="wp-tab" data-wp="WP01 JACKET">
-          <span class="wp-name">WP01 Jacket</span>
-          <span class="wp-count" id="tabCountWP01Jkt">-</span>
+        <button class="wp-tab" data-wp="Jacket & Piles">
+          <span class="wp-name">Jacket &amp; Piles</span>
+          <span class="wp-count" id="tabCountJacket">-</span>
         </button>
-        <button class="wp-tab" data-wp="WP02 TOPSIDE">
-          <span class="wp-name">WP02 Topside</span>
-          <span class="wp-count" id="tabCountWP02Top">-</span>
+        <button class="wp-tab" data-wp="Topside Structure">
+          <span class="wp-name">Topside Structure</span>
+          <span class="wp-count" id="tabCountTopsideStr">-</span>
         </button>
-        <button class="wp-tab" data-wp="WP02 JACKET">
-          <span class="wp-name">WP02 Jacket</span>
-          <span class="wp-count" id="tabCountWP02Jkt">-</span>
-        </button>
-        <button class="wp-tab" data-wp="PRO.ENGINEERING_MR TBE">
-          <span class="wp-name">Pro.Eng MR/TBE</span>
-          <span class="wp-count" id="tabCountProEng">-</span>
+        <button class="wp-tab" data-wp="WP2 Pipeline">
+          <span class="wp-name">WP2 Pipeline</span>
+          <span class="wp-count" id="tabCountPipeline">-</span>
         </button>
       </div>
     </section>
@@ -404,7 +402,7 @@
     <div class="drawer-header">
       <div class="drawer-title-area">
         <span class="badge-tag live-badge" id="drawerTransitionBadge">IFR ➔ AFC</span>
-        <h2 id="drawerDocNo" style="font-size: 1.1rem; margin: 4px 0;">MM-ASK-1A-GEN01-...</h2>
+        <h2 id="drawerDocNo" style="font-size: 1.1rem; margin: 4px 0;">MM-ZTK-1F-GEN-...</h2>
         <div id="drawerDocTitle" style="font-size: 0.85rem; color: var(--text-secondary);">Document Title</div>
       </div>
       <button class="close-drawer-btn" id="closeDrawerBtn">&times;</button>
@@ -482,8 +480,15 @@
     </div>
   </div>
 
-  <!-- Ingested Datasets -->
-  <script src="analytics_data.js"></script>
+  <!-- Project Manager & Multi-Project Dataset Bootstrapper -->
+  <script src="project_manager.js"></script>
+  <script>
+    (function() {
+      var proj = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
+      var src = (proj === 'ASK') ? 'ask_analytics_data.js' : 'z1f_analytics_data.js';
+      document.write('<script src="' + src + '"><\/script>');
+    })();
+  </script>
   <!-- Application Controller -->
   <script src="app_analytics.js"></script>
 </body>

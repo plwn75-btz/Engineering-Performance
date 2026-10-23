@@ -1,8 +1,8 @@
 """
-Vendor Document Review Tracking Data Processor
-Processes "ASK Vendor Document Log Report" Excel files (.xls/.xlsx),
-extracts submissions by contractor (zm167dc@jutal.com, supaporns@jutal.com),
-calculates review durations in working days (<= 10 WD vs > 10 WD vs Pending),
+Z1F Vendor Document Review Tracking Data Processor
+Processes "Z1F Vendor Document Log Report" Excel files (.xls/.xlsx),
+extracts all vendor document submissions across equipment packages,
+calculates review durations in Mon-Fri working days (<= 10 WD vs > 10 WD vs Pending),
 and generates vendor_data.js for the interactive dashboard.
 """
 
@@ -12,7 +12,7 @@ import re
 import glob
 import json
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import xlrd
 import pandas as pd
 
@@ -42,49 +42,52 @@ def extract_file_date_obj(filename):
         year = int(match.group(3))
         if year < 100: year += 2000
         month = MONTH_MAP.get(month_str, 1)
-        from datetime import date
         return date(year, month, day)
-    from datetime import date
     return date.min
 
 def process_vendor_file(excel_path=None):
     if not excel_path:
-        files = [f for f in glob.glob("ASK Vendor Document Log Report*.xls*") if not os.path.basename(f).startswith("~$")]
+        files = [f for f in (glob.glob("Z1F Vendor Document Log Report*.xls*") + glob.glob("16102026/Z1F Vendor Document Log Report*.xls*")) if not os.path.basename(f).startswith("~$")]
         if not files:
-            print("Error: No 'ASK Vendor Document Log Report' Excel file found in current folder.")
+            print("Error: No 'Z1F Vendor Document Log Report' Excel file found.")
             return False
         files.sort(key=lambda x: extract_file_date_obj(os.path.basename(x)), reverse=True)
         excel_path = files[0]
 
     print(f"Loading Vendor Report: {excel_path}...")
-    wb = xlrd.open_workbook(excel_path)
-    sh = wb.sheet_by_name('Page 1')
     
-    # Header is at row index 9
-    headers = [str(sh.cell_value(9, c)).strip() for c in range(sh.ncols)]
-    data = []
-    for r in range(10, sh.nrows):
-        data.append([sh.cell_value(r, c) for c in range(sh.ncols)])
-    
-    df = pd.DataFrame(data, columns=headers)
+    # Check if .xlsx or .xls
+    if excel_path.endswith('.xlsx'):
+        import openpyxl
+        wb = openpyxl.load_workbook(excel_path, data_only=True)
+        sh = wb['Page 1']
+        data_iter = sh.values
+        for _ in range(9): next(data_iter)
+        headers = [str(c or '').strip() for c in next(data_iter)]
+        data = list(data_iter)
+        df = pd.DataFrame(data, columns=headers)
+    else:
+        wb = xlrd.open_workbook(excel_path)
+        sh = wb.sheet_by_name('Page 1')
+        headers = [str(sh.cell_value(9, c)).strip() for c in range(sh.ncols)]
+        data = []
+        for r in range(10, sh.nrows):
+            data.append([sh.cell_value(r, c) for c in range(sh.ncols)])
+        df = pd.DataFrame(data, columns=headers)
+
     print(f"Total raw rows in vendor report: {len(df)}")
+    df = df.dropna(subset=['Document No.']).copy()
+    print(f"Valid vendor submittals: {len(df)}")
 
-    # All submissions in this report are from Jutal contractor (zm167dc / supaporns)
-    # If filtered by @jutal.com:
-    j_df = df[df['Submitted By'].astype(str).str.contains('jutal.com', case=False, na=False)].copy()
-    if len(j_df) == 0:
-        j_df = df.copy()  # fallback if no jutal emails
-    print(f"Found {len(j_df)} submissions from Contractor (Jutal).")
-
-    j_df['in_dt'] = pd.to_datetime(j_df['Actual Submit In'], format='%d-%b-%Y %H:%M:%S', errors='coerce')
-    j_df['out_dt'] = pd.to_datetime(j_df['Actual Submit Out'], format='%d-%b-%Y %H:%M:%S', errors='coerce')
+    df['in_dt'] = pd.to_datetime(df['Actual Submit In'], format='%d-%b-%Y %H:%M:%S', errors='coerce')
+    df['out_dt'] = pd.to_datetime(df['Actual Submit Out'], format='%d-%b-%Y %H:%M:%S', errors='coerce')
 
     def compute_duration(row):
         if pd.isna(row['in_dt']) or pd.isna(row['out_dt']):
             return None
         return calc_working_days(row['in_dt'].date(), row['out_dt'].date())
 
-    j_df['duration_days'] = j_df.apply(compute_duration, axis=1)
+    df['duration_days'] = df.apply(compute_duration, axis=1)
 
     def get_category(row):
         dur = row['duration_days']
@@ -95,10 +98,10 @@ def process_vendor_file(excel_path=None):
         else:
             return '> 10 Days'
 
-    j_df['category'] = j_df.apply(get_category, axis=1)
+    df['category'] = df.apply(get_category, axis=1)
 
     records = []
-    for _, row in j_df.iterrows():
+    for _, row in df.iterrows():
         dur = row['duration_days']
         dur_val = int(dur) if pd.notna(dur) else None
         records.append({
@@ -107,7 +110,7 @@ def process_vendor_file(excel_path=None):
             'doc_title': str(row.get('Document Title', '') or '').strip(),
             'rev': str(row.get('Rev.', '') or '').strip(),
             'asset_doctype': str(row.get('Asset Doctype', '') or 'Vendor Document').strip(),
-            'doc_category': str(row.get('Document Category', '') or 'Vendor Document').strip(),
+            'doc_category': str(row.get('Document Category', '') or 'Part D - Vendor Doc').strip(),
             'vendor_package_code': str(row.get('Vendor Package Code', '') or '').strip(),
             'vendor_package_name': str(row.get('Vendor Package Name', '') or 'General').strip(),
             'discipline_code': str(row.get('Discipline Code', '') or '').strip(),
@@ -135,15 +138,23 @@ def process_vendor_file(excel_path=None):
         if len(yr) == 2: yr = "20" + yr
         report_date = f"{day}-{mon}-{yr}"
     else:
-        valid_dates = [r['actual_submit_in'] for r in records if r.get('actual_submit_in')]
-        report_date = sorted(valid_dates, reverse=True)[0] if valid_dates else "18-Sep-2026"
+        report_date = "16-Oct-2026"
 
     out_path = Path("vendor_data.js")
+    content = (
+        f'window.VENDOR_REPORT_DATE = "{report_date}";\n'
+        f'window.Z1F_VENDOR_REPORT_DATE = "{report_date}";\n'
+        'window.RAW_VENDOR_DATA = ' + json.dumps(records, ensure_ascii=False) + ';'
+    )
     with open(out_path, 'w', encoding='utf-8') as f:
-        f.write(f'window.VENDOR_REPORT_DATE = "{report_date}";\n')
-        f.write('window.RAW_VENDOR_DATA = ' + json.dumps(records, ensure_ascii=False) + ';')
+        f.write(content)
 
-    print(f"-> Generated {out_path} with {len(records)} records (Report Date: {report_date}).")
+    z1f_dir = Path("data/z1f")
+    z1f_dir.mkdir(parents=True, exist_ok=True)
+    with open(z1f_dir / "vendor_data.js", 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    print(f"-> Generated {out_path} and {z1f_dir / 'vendor_data.js'} with {len(records)} records (Report Date: {report_date}).")
 
     # Summary
     completed = [r for r in records if r['category'] != 'Pending']
@@ -151,7 +162,7 @@ def process_vendor_file(excel_path=None):
     o10 = [r for r in completed if r['category'] == '> 10 Days']
     pending = [r for r in records if r['category'] == 'Pending']
     
-    print("\n--- Vendor Document Performance Summary ---")
+    print("\n--- Z1F Vendor Document Performance Summary ---")
     print(f"Total Submissions: {len(records)}")
     print(f"Completed Reviews: {len(completed)}")
     if completed:
@@ -161,13 +172,9 @@ def process_vendor_file(excel_path=None):
         print(f"  - Avg Review Duration: {avg_wd:.1f} Working Days")
     print(f"Pending Client Reviews: {len(pending)} ({len(pending)/len(records)*100:.1f}%)")
     
-    print("\n--- Vendor Package Breakdown ---")
+    print("\n--- Top 10 Vendor Packages ---")
     pkg_counts = pd.Series([r['vendor_package_name'] for r in records]).value_counts()
     print(pkg_counts.head(10))
-
-    print("\n--- Discipline Breakdown ---")
-    disc_counts = pd.Series([r['discipline_name'] for r in records]).value_counts()
-    print(disc_counts)
     return True
 
 if __name__ == '__main__':

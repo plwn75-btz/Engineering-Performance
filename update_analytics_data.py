@@ -1,21 +1,23 @@
 """
-Analytic Evaluation Data Processor: Rebaseline Plan vs. Actual Revision Lifecycle Engine
+Z1F Analytic Evaluation Data Processor: Rebaseline Plan vs. Actual Revision Lifecycle Engine
 Integrates:
-1. MDR Cut-off Excel Register (5 tabs)
-2. Technical Document Log Report (.xlsx)
-3. Vendor Document Log Report (.xls/.xlsx)
+1. Multi-Contractor Engineering Registers (Jacket & Piles, Topside Structure, Topside without Structure 00210, WP2 Pipeline)
+2. Z1F Technical Document Log Report (.xlsx)
 
 Features:
-- Calendar-based automatic file detection across weeks (retaining historical files)
-- Dynamic column header detection (immune to inserted columns like 'FORECAST')
-- Multi-week comparison: automatically compares latest cut-off against previous cut-off
-- Forensic Delay Attribution & Macro Justification Calculation (> 50% Contractor Overrun)
+- Multi-Contractor scope attribution (Jacket & Piles, Topside Structure, Topside without Structure, WP2 Pipeline)
+- Plan vs Actual cycle duration tracking (Mon-Fri Working Days)
+- Forensic Delay Attribution:
+  (1) Improperly Planned (Plan <= 10 WD allowance)
+  (2) Late Incorporation by Contractor
+  (3) Late Client Review (> 10 WD SLA)
+  (4) Compound Delay (Client Review > 10 WD + Late Cont. Incorp)
+- Contractor Entitlement Protection (protects planned incorporation allowance if Client takes > 10 WD)
+- Contractual 50% Macro Delay Threshold Evaluation
 - Exports analytics_data.js with:
     window.ANALYTICS_REPORT_DATE
-    window.ANALYTICS_PREV_REPORT_DATE
+    window.Z1F_ANALYTICS_REPORT_DATE
     window.ANALYTICS_SUMMARY
-    window.ANALYTICS_PREV_SUMMARY
-    window.ANALYTICS_WOW_DIFF
     window.ANALYTICS_DATA
 """
 
@@ -35,7 +37,6 @@ MONTH_MAP = {
 }
 
 def extract_file_date(filename):
-    """Extracts Day, Month, Year from filename and returns a datetime.date object."""
     match = re.search(r'(\d{1,2})[\s\-_]+([A-Za-z]{3})[\s\-_]+(\d{2,4})', filename)
     if match:
         day = int(match.group(1))
@@ -45,13 +46,6 @@ def extract_file_date(filename):
         month = MONTH_MAP.get(month_str, 1)
         return date(year, month, day)
     return date.min
-
-def get_sorted_files(pattern, directory="."):
-    """Returns files matching pattern sorted strictly by calendar date descending."""
-    files = glob.glob(os.path.join(directory, pattern))
-    valid = [f for f in files if not os.path.basename(f).startswith("~$")]
-    valid.sort(key=lambda f: extract_file_date(os.path.basename(f)), reverse=True)
-    return valid
 
 def calc_working_days(d1, d2):
     if d1 is None or d2 is None: return None
@@ -75,191 +69,117 @@ def parse_date_obj(v):
         except: pass
     return None
 
-def format_date_str(d):
-    if isinstance(d, (datetime, date)):
-        return f"{d.day:02d}-{d.strftime('%b')}-{d.year}"
-    return str(d)
+def process_analytics(mdr_data_path=None, tech_log_path=None):
+    # If mdr_data.js exists, we can directly parse the unified deliverable records
+    mdr_js_path = Path("mdr_data.js")
+    if not mdr_js_path.exists():
+        import update_mdr_data
+        update_mdr_data.process_mdr()
 
-def map_revision_columns(sheet, is_mr_tbe=False):
-    """
-    Dynamically maps revision milestone columns by reading milestone headers and subheaders.
-    This guarantees 100% resilience against inserted or shifted columns.
-    """
-    rev_row = 10 if is_mr_tbe else 12
-    sub_row = 11 if is_mr_tbe else 13
-    
-    current_rev = None
-    col_map = {}
-    
-    for c in range(1, min(sheet.max_column + 1, 70)):
-        r_val = sheet.cell(row=rev_row, column=c).value
-        s_val = sheet.cell(row=sub_row, column=c).value
-        
-        if r_val:
-            r_str = str(r_val).strip().upper()
-            for cand in ['IFR', 'IFA', 'AFC', 'AP']:
-                if cand in r_str:
-                    current_rev = cand
-                    break
-        
-        if s_val and current_rev:
-            s_str = str(s_val).strip().upper().replace('\n', ' ')
-            if 'REBASELINE' in s_str:
-                col_key = f"{current_rev}_REB"
-                if col_key not in col_map:  # pick first match
-                    col_map[col_key] = c
-            elif 'PLAN' in s_str and 'REBASELINE' not in s_str:
-                col_key = f"{current_rev}_PLAN"
-                if col_key not in col_map:
-                    col_map[col_key] = c
-                    
-    return col_map
+    print("Loading mdr_data.js for Analytic Evaluation...")
+    with open("mdr_data.js", "r", encoding="utf-8") as f:
+        content = f.read()
 
-def extract_evaluation_dataset(mdr_path, tech_log_path):
-    """Ingests Technical Log and MDR Register and computes all transition evaluations."""
-    print(f"[Analytics Engine] Loading Tech Log: {os.path.basename(tech_log_path)}...")
-    wb_log = openpyxl.load_workbook(tech_log_path, data_only=True)
-    sheet_log = wb_log['Page 1']
-    log_vals = sheet_log.values
-    for _ in range(9): next(log_vals)
-    headers_log = next(log_vals)
-    df_log = pd.DataFrame(log_vals, columns=headers_log)
-    j_log = df_log[df_log['Submitted By'].astype(str).str.contains('zm167dc@jutal.com', case=False, na=False)].copy()
-
-    doc_log_map = {}
-    for _, row in j_log.iterrows():
-        d_no = str(row['Document No.'] or '').strip()
-        if not d_no: continue
-        if d_no not in doc_log_map: doc_log_map[d_no] = []
-        in_str = str(row['Actual Submit In'] or '').strip()
-        out_str = str(row['Actual Submit Out'] or '').strip()
-        in_dt, out_dt = None, None
-        if in_str:
-            try: in_dt = datetime.strptime(in_str, '%d-%b-%Y %H:%M:%S')
-            except: pass
-        if out_str:
-            try: out_dt = datetime.strptime(out_str, '%d-%b-%Y %H:%M:%S')
-            except: pass
-        dur = calc_working_days(in_dt.date(), out_dt.date()) if (in_dt and out_dt) else None
-        doc_log_map[d_no].append({
-            'rev': str(row['Rev.'] or '').strip(),
-            'submittal_id': str(row['Submittal ID'] or '').strip(),
-            'doc_category': str(row.get('Document Category') or '').strip(),
-            'in_dt': in_dt.strftime('%Y-%m-%d') if in_dt else None,
-            'out_dt': out_dt.strftime('%Y-%m-%d') if out_dt else None,
-            'review_days': dur,
-            'status_code': str(row['Return Status Code'] or '').strip(),
-            'status_name': str(row['Return Status Name'] or '').strip()
-        })
-
-    print(f"[Analytics Engine] Indexed {len(doc_log_map)} documents from Technical Log.")
-
-    print(f"[Analytics Engine] Ingesting MDR: {os.path.basename(mdr_path)}...")
-    wb_mdr = openpyxl.load_workbook(mdr_path, data_only=True)
-    sheets = ['WP01 TOPSIDE', 'WP01 JACKET', 'WP02 TOPSIDE', 'WP02 JACKET', 'PRO.ENGINEERING_MR TBE']
+    m = re.search(r'window\.MDR_DATA\s*=\s*(\[.*?\]);', content, re.DOTALL)
+    if not m:
+        print("Error: Could not extract window.MDR_DATA from mdr_data.js")
+        return False
+    mdr_records = json.loads(m.group(1))
+    print(f"Loaded {len(mdr_records)} deliverables from mdr_data.js.")
 
     transitions = []
     trans_id_counter = 1
 
-    for sname in sheets:
-        if sname not in wb_mdr.sheetnames: continue
-        sheet = wb_mdr[sname]
-        is_mr_tbe = (sname == 'PRO.ENGINEERING_MR TBE')
-        header_row = 11 if is_mr_tbe else 13
-        
-        # Dynamically discover columns for this sheet
-        col_map = map_revision_columns(sheet, is_mr_tbe=is_mr_tbe)
-        
-        ifr_reb_col = col_map.get('IFR_REB')
-        ifr_orig_col = col_map.get('IFR_PLAN')
-        ifa_reb_col = col_map.get('IFA_REB')
-        ifa_orig_col = col_map.get('IFA_PLAN')
-        afc_reb_col = col_map.get('AFC_REB')
-        afc_orig_col = col_map.get('AFC_PLAN')
-        ap_reb_col = col_map.get('AP_REB')
-        ap_orig_col = col_map.get('AP_PLAN')
+    for item in mdr_records:
+        doc_no = item['doc_no']
+        title = item['title']
+        contractor = item.get('contractor_set', 'General')
+        work_package = item.get('work_package', 'General')
+        disc = item.get('discipline', 'GEN')
+        area = item.get('area', 'GEN')
+        cat = item.get('doc_category', 'Part B - Engineering Doc')
+        doc_type = item.get('doc_type', 'DOC')
 
-        for r in range(header_row + 1, sheet.max_row + 1):
-            doc_no_val = sheet.cell(row=r, column=9).value
-            if not doc_no_val: continue
-            doc_no = str(doc_no_val).strip()
-            if not doc_no.startswith('MM-'): continue
+        ifr = item.get('ifr', {})
+        ifa = item.get('ifa', {})
+        afc = item.get('afc', {})
+        ap = item.get('ap', {})
 
-            title = str(sheet.cell(row=r, column=10).value or '').strip()
-            disc = str(sheet.cell(row=r, column=4).value or '').strip()
-            area = str(sheet.cell(row=r, column=3).value or '').strip()
-            doc_type = str(sheet.cell(row=r, column=5).value or '').strip()
-            doc_class = str(sheet.cell(row=r, column=11).value or '').strip()
+        ifr_plan = parse_date_obj(ifr.get('plan'))
+        ifa_plan = parse_date_obj(ifa.get('plan'))
+        afc_plan = parse_date_obj(afc.get('plan'))
+        ap_plan = parse_date_obj(ap.get('plan'))
 
-            ifr_reb = parse_date_obj(sheet.cell(row=r, column=ifr_reb_col).value) if ifr_reb_col else None
-            ifr_orig = parse_date_obj(sheet.cell(row=r, column=ifr_orig_col).value) if ifr_orig_col else None
-            ifa_reb = parse_date_obj(sheet.cell(row=r, column=ifa_reb_col).value) if ifa_reb_col else None
-            ifa_orig = parse_date_obj(sheet.cell(row=r, column=ifa_orig_col).value) if ifa_orig_col else None
-            afc_reb = parse_date_obj(sheet.cell(row=r, column=afc_reb_col).value) if afc_reb_col else None
-            afc_orig = parse_date_obj(sheet.cell(row=r, column=afc_orig_col).value) if afc_orig_col else None
-            ap_reb = parse_date_obj(sheet.cell(row=r, column=ap_reb_col).value) if ap_reb_col else None
-            ap_orig = parse_date_obj(sheet.cell(row=r, column=ap_orig_col).value) if ap_orig_col else None
+        actually_skipped_ifa = bool(ifr.get('submit_out') and afc.get('submit_in') and not ifa.get('submit_in'))
+        is_ifa_skipped = ifa.get('is_skipped', False) or (ifa_plan is None and cat == 'Part C - Engineering Dwg') or actually_skipped_ifa
 
-            # IFA Skipped check
-            is_ifa_skipped = False
-            if ifa_orig_col:
-                v1 = str(sheet.cell(row=r, column=ifa_orig_col).value or '').strip().upper()
-                if v1 in ['N/A', '-']: is_ifa_skipped = True
-            if ifa_reb_col:
-                v2 = str(sheet.cell(row=r, column=ifa_reb_col).value or '').strip().upper()
-                if v2 in ['N/A', '-']: is_ifa_skipped = True
+        candidate_transitions = []
+        if actually_skipped_ifa or (is_ifa_skipped and not ifa_plan):
+            if ifr_plan and afc_plan:
+                candidate_transitions.append({
+                    'transition_type': 'IFR -> AFC (Fast-Track)',
+                    'stage_from': 'IFR', 'stage_to': 'AFC',
+                    'plan_from': ifr_plan, 'plan_to': afc_plan,
+                    'log_from': ifr, 'log_to': afc
+                })
+        else:
+            if ifr_plan and ifa_plan:
+                candidate_transitions.append({
+                    'transition_type': 'IFR -> IFA',
+                    'stage_from': 'IFR', 'stage_to': 'IFA',
+                    'plan_from': ifr_plan, 'plan_to': ifa_plan,
+                    'log_from': ifr, 'log_to': ifa
+                })
+            if ifa_plan and afc_plan:
+                candidate_transitions.append({
+                    'transition_type': 'IFA -> AFC',
+                    'stage_from': 'IFA', 'stage_to': 'AFC',
+                    'plan_from': ifa_plan, 'plan_to': afc_plan,
+                    'log_from': ifa, 'log_to': afc
+                })
 
-            logs = doc_log_map.get(doc_no, [])
-            logs.sort(key=lambda x: x['in_dt'] or '9999-99-99')
+        if afc_plan and ap_plan:
+            candidate_transitions.append({
+                'transition_type': 'AFC -> AP',
+                'stage_from': 'AFC', 'stage_to': 'AP',
+                'plan_from': afc_plan, 'plan_to': ap_plan,
+                'log_from': afc, 'log_to': ap
+            })
 
-            # Find revision logs
-            ifr_log = next((l for l in logs if l['rev'].upper().startswith('A')), None)
-            ifa_log = next((l for l in logs if l['rev'].upper().startswith('B')), None)
-            afc_log = next((l for l in logs if l['rev'].upper().startswith('C')), None)
+        for ct in candidate_transitions:
+            t_type = ct['transition_type']
+            p_from, p_to = ct['plan_from'], ct['plan_to']
+            p_wd = calc_working_days(p_from, p_to)
+            p_incorp_allowance = max(0, p_wd - 10) if p_wd is not None else 0
+            plan_defect = (p_wd is not None and p_wd <= 10)
 
-            if not ifr_log and len(logs) > 0: ifr_log = logs[0]
-            if not ifa_log and not is_ifa_skipped and len(logs) > 1: ifa_log = logs[1]
-            if not afc_log and len(logs) > 2: afc_log = logs[2]
+            l_from, l_to = ct['log_from'], ct['log_to']
 
-            ap_log = None
-            if afc_log and afc_log['out_dt']:
-                after_afc = [l for l in logs if l['in_dt'] and l['in_dt'] > afc_log['out_dt']]
-                if after_afc: ap_log = after_afc[0]
-                elif 'APPR' in (afc_log['status_code'] or '').upper(): ap_log = afc_log
+            if t_type == 'AFC -> AP':
+                # AFC -> AP is an Approval corridor
+                # Start: AFC submission in / review out. Completion: AP approval date / AFC approval
+                afc_in_str = l_from.get('submit_in')
+                afc_out_str = l_from.get('submit_out')
+                ap_out_str = l_to.get('submit_out') or l_to.get('actual') or afc_out_str
+                is_appr = bool(l_to.get('is_approved') or (l_from.get('status_code') in ['APPR', 'CODE 1', 'CODE 2', 'AWC']))
 
-            # Category
-            cat = None
-            for l in logs:
-                if l.get('doc_category'): cat = l['doc_category']; break
-            if not cat:
-                if any(x in doc_no for x in ['-DWG-', '-PID-', '-PFD-', '-UFD-', '-LAY-', '-SCH-', '-SLD-', '-ISO-']) or doc_type in ['DWG', 'PID', 'PFD', 'UFD', 'LAY', 'SCH', 'SLD', 'ISO', 'GA']:
-                    cat = 'Part C - Engineering Dwg'
-                else: cat = 'Part B - Engineering Doc'
-            clean_category = 'Part C - Engineering Dwg' if 'Part C' in cat else 'Part B - Engineering Doc'
+                has_actual = bool(afc_in_str and (ap_out_str or is_appr))
+                
+                client_rev_wd = l_from.get('review_days') or (calc_working_days(parse_date_obj(afc_in_str), parse_date_obj(afc_out_str)) if afc_in_str and afc_out_str else 0)
+                client_sla_status = 'PASS' if (client_rev_wd is not None and client_rev_wd <= 10) else 'OVER'
+                client_delay = max(0, client_rev_wd - 10) if client_rev_wd is not None else 0
 
-            candidate_transitions = []
-            if not is_ifa_skipped and ifr_reb and ifa_reb:
-                candidate_transitions.append({'transition_type': 'IFR -> IFA', 'stage_from': 'IFR', 'stage_to': 'IFA', 'plan_from': ifr_reb, 'plan_to': ifa_reb, 'log_from': ifr_log, 'log_to': ifa_log})
-            elif is_ifa_skipped and ifr_reb and afc_reb:
-                candidate_transitions.append({'transition_type': 'IFR -> AFC (Fast-Track)', 'stage_from': 'IFR', 'stage_to': 'AFC', 'plan_from': ifr_reb, 'plan_to': afc_reb, 'log_from': ifr_log, 'log_to': afc_log})
-            
-            if not is_ifa_skipped and ifa_reb and afc_reb:
-                candidate_transitions.append({'transition_type': 'IFA -> AFC', 'stage_from': 'IFA', 'stage_to': 'AFC', 'plan_from': ifa_reb, 'plan_to': afc_reb, 'log_from': ifa_log, 'log_to': afc_log})
-            
-            if afc_reb and ap_reb:
-                candidate_transitions.append({'transition_type': 'AFC -> AP', 'stage_from': 'AFC', 'stage_to': 'AP', 'plan_from': afc_reb, 'plan_to': ap_reb, 'log_from': afc_log, 'log_to': ap_log})
+                cont_inc_wd = l_to.get('incorp_days') if l_to.get('incorp_days') is not None else 0
+                cont_delay = max(0, cont_inc_wd - p_incorp_allowance) if cont_inc_wd is not None else 0
 
-            for ct in candidate_transitions:
-                p_from, p_to = ct['plan_from'], ct['plan_to']
-                p_wd = calc_working_days(p_from, p_to)
-                p_incorp_allowance = max(0, p_wd - 10) if p_wd is not None else 0
-                plan_defect = (p_wd is not None and p_wd <= 10)
-
-                l_from, l_to = ct['log_from'], ct['log_to']
-                has_actual = (l_from is not None and l_from['out_dt'] is not None and l_to is not None and l_to['in_dt'] is not None)
+                actual_cycle_wd = (client_rev_wd + cont_inc_wd) if (client_rev_wd is not None and cont_inc_wd is not None) else None
+                cycle_variance_wd = (actual_cycle_wd - p_wd) if (actual_cycle_wd is not None and p_wd is not None) else None
+                allowable_cycle_wd = (client_rev_wd + p_incorp_allowance) if client_rev_wd is not None else None
+            else:
+                has_actual = bool(l_from.get('submit_out') and l_to.get('submit_in'))
                 
                 client_rev_wd, client_sla_status, client_delay = None, None, 0
-                if l_from and l_from['review_days'] is not None:
+                if l_from.get('review_days') is not None:
                     client_rev_wd = l_from['review_days']
                     if client_rev_wd <= 10: client_sla_status = 'PASS'
                     else:
@@ -268,11 +188,13 @@ def extract_evaluation_dataset(mdr_path, tech_log_path):
 
                 cont_inc_wd, cont_delay = None, 0
                 if has_actual:
-                    d_from = datetime.strptime(l_from['out_dt'], '%Y-%m-%d').date()
-                    d_to = datetime.strptime(l_to['in_dt'], '%Y-%m-%d').date()
-                    cont_inc_wd = calc_working_days(d_from, d_to)
-                    if cont_inc_wd is not None and cont_inc_wd > p_incorp_allowance:
-                        cont_delay = cont_inc_wd - p_incorp_allowance
+                    try:
+                        d_from = datetime.strptime(l_from['submit_out'], '%Y-%m-%d').date()
+                        d_to = datetime.strptime(l_to['submit_in'], '%Y-%m-%d').date()
+                        cont_inc_wd = calc_working_days(d_from, d_to)
+                        if cont_inc_wd is not None and cont_inc_wd > p_incorp_allowance:
+                            cont_delay = cont_inc_wd - p_incorp_allowance
+                    except: pass
 
                 actual_cycle_wd, cycle_variance_wd, allowable_cycle_wd = None, None, None
                 if has_actual and client_rev_wd is not None and cont_inc_wd is not None:
@@ -280,59 +202,68 @@ def extract_evaluation_dataset(mdr_path, tech_log_path):
                     if p_wd is not None: cycle_variance_wd = actual_cycle_wd - p_wd
                     allowable_cycle_wd = client_rev_wd + p_incorp_allowance
 
-                delay_cause, delay_label = None, None
-                if has_actual and actual_cycle_wd is not None and p_wd is not None:
-                    if actual_cycle_wd <= p_wd:
-                        delay_cause = 'MET_PLAN'
-                        delay_label = 'Met Rebaseline Plan'
-                    elif plan_defect:
-                        delay_cause = 'IMPROPER_PLAN'
-                        delay_label = '(1) Improperly Planned'
-                    elif client_delay > 0 and cont_delay > 0:
-                        delay_cause = 'COMPOUND_DELAY'
-                        delay_label = '(4) Compound Delay (Client + Cont.)'
-                    elif client_delay > 0 and cont_delay <= 0:
-                        delay_cause = 'LATE_CLIENT'
-                        delay_label = '(3) Late Client Review'
-                    elif client_delay <= 0 and cont_delay > 0:
-                        delay_cause = 'LATE_CONTRACTOR'
-                        delay_label = '(2) Late Cont. Incorp'
-                    else:
-                        delay_cause = 'LATE_CONTRACTOR'
-                        delay_label = '(2) Late Cont. Incorp'
+            delay_cause, delay_label = None, None
+            if has_actual and actual_cycle_wd is not None and p_wd is not None:
+                if actual_cycle_wd <= p_wd:
+                    delay_cause = 'MET_PLAN'
+                    delay_label = 'Met Rebaseline Plan'
+                elif plan_defect:
+                    delay_cause = 'IMPROPER_PLAN'
+                    delay_label = '(1) Improperly Planned'
+                elif client_delay > 0 and cont_delay > 0:
+                    delay_cause = 'COMPOUND_DELAY'
+                    delay_label = '(4) Compound Delay (Client + Cont.)'
+                elif client_delay > 0 and cont_delay <= 0:
+                    delay_cause = 'LATE_CLIENT'
+                    delay_label = '(3) Late Client Review'
+                elif client_delay <= 0 and cont_delay > 0:
+                    delay_cause = 'LATE_CONTRACTOR'
+                    delay_label = '(2) Late Cont. Incorp'
+                else:
+                    delay_cause = 'LATE_CONTRACTOR'
+                    delay_label = '(2) Late Cont. Incorp'
 
-                transitions.append({
-                    'id': f"TR-{trans_id_counter:05d}",
-                    'doc_no': doc_no, 'title': title, 'discipline': disc, 'work_package': sname,
-                    'area': area, 'doc_category': clean_category, 'doc_type': doc_type,
-                    'transition_type': ct['transition_type'],
-                    'stage_from': ct['stage_from'], 'stage_to': ct['stage_to'],
-                    'plan_from_dt': ct['plan_from'].strftime('%Y-%m-%d') if ct['plan_from'] else None,
-                    'plan_to_dt': ct['plan_to'].strftime('%Y-%m-%d') if ct['plan_to'] else None,
-                    'plan_wd': p_wd, 'plan_incorp_allowance_wd': p_incorp_allowance,
-                    'plan_defect': plan_defect,
-                    'actual_cycle_wd': actual_cycle_wd, 'cycle_variance_wd': cycle_variance_wd,
-                    'client_rev_wd': client_rev_wd, 'client_sla_status': client_sla_status,
-                    'client_delay_days': client_delay, 'cont_inc_wd': cont_inc_wd,
-                    'contractor_delay_days': cont_delay, 'allowable_cycle_wd': allowable_cycle_wd,
-                    'has_actual': has_actual, 'delay_cause': delay_cause, 'delay_cause_label': delay_label,
-                    'submittal_id_from': l_from['submittal_id'] if l_from else None,
-                    'submittal_id_to': l_to['submittal_id'] if l_to else None,
-                    'rev_from': l_from['rev'] if l_from else None,
-                    'rev_to': l_to['rev'] if l_to else None,
-                    'submit_out_from': l_from['out_dt'] if l_from else None,
-                    'submit_in_to': l_to['in_dt'] if l_to else None,
-                    'return_status_from': l_from['status_code'] if l_from else None,
-                    'return_status_to': l_to['status_code'] if l_to else None
-                })
-                trans_id_counter += 1
+            transitions.append({
+                'id': f"TR-{trans_id_counter:05d}",
+                'doc_no': doc_no, 'title': title, 'discipline': disc, 'contractor': contractor,
+                'work_package': work_package, 'area': area, 'doc_category': cat, 'doc_type': doc_type,
+                'transition_type': ct['transition_type'],
+                'stage_from': ct['stage_from'], 'stage_to': ct['stage_to'],
+                'plan_from_dt': ct['plan_from'].strftime('%Y-%m-%d') if ct['plan_from'] else None,
+                'plan_to_dt': ct['plan_to'].strftime('%Y-%m-%d') if ct['plan_to'] else None,
+                'plan_cycle_wd': p_wd,
+                'plan_wd': p_wd,
+                'plan_incorp_allowance_wd': p_incorp_allowance,
+                'plan_defect': plan_defect,
+                'plan_feasibility': 'DEFECTIVE_IMPROPER' if plan_defect else 'REALISTIC',
+                'has_actual': has_actual,
+                'actual_from_out_dt': l_from.get('submit_out'),
+                'actual_to_in_dt': (l_to.get('submit_out') or l_to.get('actual') or l_from.get('submit_out')) if ct['transition_type'] == 'AFC -> AP' else l_to.get('submit_in'),
+                'client_rev_wd': client_rev_wd,
+                'client_sla_status': client_sla_status,
+                'client_delay_wd': client_delay,
+                'client_delay_days': client_delay,
+                'cont_inc_wd': cont_inc_wd,
+                'cont_delay_wd': cont_delay,
+                'contractor_delay_days': cont_delay,
+                'actual_cycle_wd': actual_cycle_wd,
+                'cycle_variance_wd': cycle_variance_wd,
+                'allowable_cycle_wd': allowable_cycle_wd,
+                'delay_cause': delay_cause,
+                'delay_label': delay_label,
+                'delay_cause_label': delay_label,
+                'submittal_from': l_from.get('submittal_id'),
+                'submittal_to': l_to.get('submittal_id'),
+                'status_code_from': l_from.get('status_code'),
+                'status_code_to': l_to.get('status_code')
+            })
+            trans_id_counter += 1
 
-    # Summarize metrics
+    # Evaluation summaries
     eval_items = [t for t in transitions if t['has_actual'] and t['actual_cycle_wd'] is not None]
-    total_eval = len(eval_items)
     met_list = [t for t in eval_items if t['delay_cause'] == 'MET_PLAN']
     overdue_list = [t for t in eval_items if t['delay_cause'] != 'MET_PLAN']
-    
+
     improper_list = [t for t in overdue_list if t['delay_cause'] == 'IMPROPER_PLAN']
     late_cont_list = [t for t in overdue_list if t['delay_cause'] == 'LATE_CONTRACTOR']
     late_client_list = [t for t in overdue_list if t['delay_cause'] == 'LATE_CLIENT']
@@ -345,178 +276,57 @@ def extract_evaluation_dataset(mdr_path, tech_log_path):
     client_eval = [t for t in eval_items if t['client_rev_wd'] is not None]
     client_pass = [t for t in client_eval if t['client_sla_status'] == 'PASS']
     client_sla_rate = round(len(client_pass) / len(client_eval) * 100, 1) if client_eval else 0.0
-
     avg_client_wd = round(sum(t['client_rev_wd'] for t in client_eval) / len(client_eval), 1) if client_eval else 0.0
+
     cont_eval = [t for t in eval_items if t['cont_inc_wd'] is not None]
     avg_cont_inc_wd = round(sum(t['cont_inc_wd'] for t in cont_eval) / len(cont_eval), 1) if cont_eval else 0.0
 
-    avg_plan_wd = round(sum(t['plan_wd'] for t in eval_items if t['plan_wd'] is not None) / total_eval, 1) if total_eval else 0.0
-    avg_actual_wd = round(sum(t['actual_cycle_wd'] for t in eval_items) / total_eval, 1) if total_eval else 0.0
-
-    # Group breakdowns
-    disc_map = {}
-    for t in eval_items:
-        d = t['discipline'] or 'Other'
-        if d not in disc_map: disc_map[d] = {'total': 0, 'met': 0, 'improper': 0, 'cont': 0, 'client': 0, 'compound': 0}
-        disc_map[d]['total'] += 1
-        if t['delay_cause'] == 'MET_PLAN': disc_map[d]['met'] += 1
-        elif t['delay_cause'] == 'IMPROPER_PLAN': disc_map[d]['improper'] += 1
-        elif t['delay_cause'] == 'LATE_CONTRACTOR': disc_map[d]['cont'] += 1
-        elif t['delay_cause'] == 'LATE_CLIENT': disc_map[d]['client'] += 1
-        elif t['delay_cause'] == 'COMPOUND_DELAY': disc_map[d]['compound'] += 1
-
-    trans_map = {}
-    for t in eval_items:
-        s = t['transition_type']
-        if s not in trans_map: trans_map[s] = {'total': 0, 'met': 0, 'improper': 0, 'cont': 0, 'client': 0, 'compound': 0}
-        trans_map[s]['total'] += 1
-        if t['delay_cause'] == 'MET_PLAN': trans_map[s]['met'] += 1
-        elif t['delay_cause'] == 'IMPROPER_PLAN': trans_map[s]['improper'] += 1
-        elif t['delay_cause'] == 'LATE_CONTRACTOR': trans_map[s]['cont'] += 1
-        elif t['delay_cause'] == 'LATE_CLIENT': trans_map[s]['client'] += 1
-        elif t['delay_cause'] == 'COMPOUND_DELAY': trans_map[s]['compound'] += 1
-
     summary = {
-        'total_evaluated_transitions': total_eval,
+        'total_transitions': len(transitions),
+        'completed_transitions': len(eval_items),
         'met_plan_count': len(met_list),
-        'met_plan_pct': round(len(met_list) / total_eval * 100, 1) if total_eval else 0.0,
-        'overdue_count': len(overdue_list),
-        'overdue_pct': round(len(overdue_list) / total_eval * 100, 1) if total_eval else 0.0,
-        
+        'met_plan_pct': round(len(met_list) / len(eval_items) * 100, 1) if eval_items else 0.0,
+        'delayed_count': len(overdue_list),
+        'delayed_pct': round(len(overdue_list) / len(eval_items) * 100, 1) if eval_items else 0.0,
         'improper_plan_count': len(improper_list),
-        'improper_plan_pct_of_overdue': round(len(improper_list) / len(overdue_list) * 100, 1) if overdue_list else 0.0,
         'late_contractor_count': len(late_cont_list),
-        'late_contractor_pct_of_overdue': round(len(late_cont_list) / len(overdue_list) * 100, 1) if overdue_list else 0.0,
         'late_client_count': len(late_client_list),
-        'late_client_pct_of_overdue': round(len(late_client_list) / len(overdue_list) * 100, 1) if overdue_list else 0.0,
         'compound_delay_count': len(compound_list),
-        'compound_delay_pct_of_overdue': round(len(compound_list) / len(overdue_list) * 100, 1) if overdue_list else 0.0,
-        
-        'contractor_driven_count': cont_driven_count,
-        'contractor_overrun_pct': cont_overrun_pct,
+        'cont_driven_count': cont_driven_count,
+        'cont_overrun_pct': cont_overrun_pct,
         'macro_justification_flag': macro_justification_flag,
-        
-        'client_sla_compliance_rate': client_sla_rate,
-        'avg_plan_wd': avg_plan_wd,
-        'avg_actual_wd': avg_actual_wd,
-        'avg_client_rev_wd': avg_client_wd,
+        'client_sla_rate': client_sla_rate,
+        'avg_client_wd': avg_client_wd,
         'avg_cont_inc_wd': avg_cont_inc_wd,
-        
-        'discipline_breakdown': disc_map,
-        'transition_breakdown': trans_map
+        'report_date': '16-Oct-2026'
     }
 
-    return transitions, summary
-
-def generate_wow_diff(curr_summary, prev_summary, curr_date, prev_date):
-    """Calculates week-over-week deltas and builds an executive trend statement."""
-    if not prev_summary:
-        return None
-
-    def diff_val(k):
-        return round(curr_summary.get(k, 0) - prev_summary.get(k, 0), 1)
-
-    eval_diff = curr_summary['total_evaluated_transitions'] - prev_summary['total_evaluated_transitions']
-    met_count_diff = curr_summary['met_plan_count'] - prev_summary['met_plan_count']
-    met_pct_diff = diff_val('met_plan_pct')
-    overdue_count_diff = curr_summary['overdue_count'] - prev_summary['overdue_count']
-    overdue_pct_diff = diff_val('overdue_pct')
-    sla_diff = diff_val('client_sla_compliance_rate')
-    client_wd_diff = diff_val('avg_client_rev_wd')
-    cont_inc_diff = diff_val('avg_cont_inc_wd')
-    overrun_diff = diff_val('contractor_overrun_pct')
-
-    # Build trend narrative
-    trend_type = "improved" if met_pct_diff > 0 and overrun_diff <= 0 else ("steady" if abs(met_pct_diff) <= 0.5 else "softened")
-    sign_eval = f"+{eval_diff}" if eval_diff >= 0 else f"{eval_diff}"
-    sign_met_count = f"+{met_count_diff}" if met_count_diff >= 0 else f"{met_count_diff}"
-    sign_met_pct = f"+{met_pct_diff}%" if met_pct_diff >= 0 else f"{met_pct_diff}%"
-    sign_sla = f"+{sla_diff}%" if sla_diff >= 0 else f"{sla_diff}%"
-    sign_incorp = f"+{cont_inc_diff} WD" if cont_inc_diff >= 0 else f"{cont_inc_diff} WD"
-    sign_overrun = f"+{overrun_diff}%" if overrun_diff >= 0 else f"{overrun_diff}%"
-
-    statement = (
-        f"Week-over-Week Trend (vs. {prev_date} cut-off): Overall plan compliance changed by "
-        f"{sign_met_pct} ({sign_met_count} on-track transitions, total {curr_summary['total_evaluated_transitions']:,}). "
-        f"Client review turnaround recorded {curr_summary['avg_client_rev_wd']} WD ({curr_summary['client_sla_compliance_rate']}% SLA pass, {sign_sla}). "
-        f"Contractor comment incorporation averaged {curr_summary['avg_cont_inc_wd']} WD ({sign_incorp} vs prior week), "
-        f"with Contractor-driven delays standing at {curr_summary['contractor_overrun_pct']}% ({sign_overrun}), "
-        f"continuing to sustain the macro delay justification (> 50% threshold)."
+    report_date = "16-Oct-2026"
+    out_file = Path("analytics_data.js")
+    content = (
+        f'window.ANALYTICS_REPORT_DATE = "{report_date}";\n'
+        f'window.Z1F_ANALYTICS_REPORT_DATE = "{report_date}";\n'
+        'window.ANALYTICS_SUMMARY = ' + json.dumps(summary, indent=2) + ';\n'
+        'window.ANALYTICS_DATA = ' + json.dumps(transitions, ensure_ascii=False) + ';'
     )
+    with open(out_file, "w", encoding="utf-8") as f:
+        f.write(content)
 
-    return {
-        'prev_date': prev_date,
-        'curr_date': curr_date,
-        'eval_diff': eval_diff,
-        'met_count_diff': met_count_diff,
-        'met_pct_diff': met_pct_diff,
-        'overdue_count_diff': overdue_count_diff,
-        'overdue_pct_diff': overdue_pct_diff,
-        'sla_diff': sla_diff,
-        'client_wd_diff': client_wd_diff,
-        'cont_inc_diff': cont_inc_diff,
-        'overrun_diff': overrun_diff,
-        'statement': statement
-    }
+    z1f_dir = Path("data/z1f")
+    z1f_dir.mkdir(parents=True, exist_ok=True)
+    with open(z1f_dir / "analytics_data.js", "w", encoding="utf-8") as f:
+        f.write(content)
 
-def process_analytics(mdr_path=None, tech_log_path=None, vendor_log_path=None):
-    """
-    Main processor function:
-    Automatically discovers the latest weekly files and the preceding weekly files,
-    computes current evaluations and week-over-week deltas, and saves analytics_data.js.
-    """
-    mdr_files = get_sorted_files("*MDR*.xlsx")
-    tech_files = get_sorted_files("ASK Technical Document Log Report*.xlsx")
-    vendor_files = get_sorted_files("ASK Vendor Document Log Report*.xls*")
-
-    if not mdr_path:
-        if not mdr_files:
-            print("Error: No MDR Excel file found.")
-            return False
-        mdr_path = mdr_files[0]
-
-    if not tech_log_path:
-        if not tech_files:
-            print("Error: No Technical Document Log Excel file found.")
-            return False
-        tech_log_path = tech_files[0]
-
-    curr_date = format_date_str(extract_file_date(os.path.basename(mdr_path)))
-    print(f"[Analytics Master] Processing Current Week: {curr_date} ({os.path.basename(mdr_path)})")
-    curr_transitions, curr_summary = extract_evaluation_dataset(mdr_path, tech_log_path)
-
-    # Process Previous Week if available
-    prev_summary = None
-    prev_date = None
-    wow_diff = None
-
-    if len(mdr_files) > 1 and len(tech_files) > 1:
-        prev_mdr = mdr_files[1]
-        prev_tech = tech_files[1]
-        prev_date = format_date_str(extract_file_date(os.path.basename(prev_mdr)))
-        print(f"[Analytics Master] Processing Previous Week for Reference: {prev_date} ({os.path.basename(prev_mdr)})")
-        try:
-            _, prev_summary = extract_evaluation_dataset(prev_mdr, prev_tech)
-            wow_diff = generate_wow_diff(curr_summary, prev_summary, curr_date, prev_date)
-        except Exception as e:
-            print(f"Warning: Could not process previous week for WoW reference: {e}")
-
-    out_file = Path('analytics_data.js')
-    with open(out_file, 'w', encoding='utf-8') as f:
-        f.write(f'window.ANALYTICS_REPORT_DATE = "{curr_date}";\n')
-        if prev_date:
-            f.write(f'window.ANALYTICS_PREV_REPORT_DATE = "{prev_date}";\n')
-        f.write('window.ANALYTICS_SUMMARY = ' + json.dumps(curr_summary, ensure_ascii=False) + ';\n')
-        if prev_summary:
-            f.write('window.ANALYTICS_PREV_SUMMARY = ' + json.dumps(prev_summary, ensure_ascii=False) + ';\n')
-        if wow_diff:
-            f.write('window.ANALYTICS_WOW_DIFF = ' + json.dumps(wow_diff, ensure_ascii=False) + ';\n')
-        f.write('window.ANALYTICS_DATA = ' + json.dumps(curr_transitions, ensure_ascii=False) + ';\n')
-
-    print(f"\n[Analytics Master] Successfully generated {out_file} ({len(curr_transitions)} transitions, {curr_summary['total_evaluated_transitions']} evaluated).")
-    if wow_diff:
-        print(f"[Analytics Master] Week-over-Week Reference: {curr_date} vs {prev_date}")
-        print(f"  {wow_diff['statement']}")
+    print(f"Successfully generated {out_file} and {z1f_dir / 'analytics_data.js'} with {len(transitions)} transitions (Report Date: {report_date}).")
+    print("\n--- Analytics Summary ---")
+    print(f"Total Transitions: {len(transitions)} | Completed: {len(eval_items)}")
+    print(f"Met Rebaseline Plan: {len(met_list)} ({summary['met_plan_pct']}%)")
+    print(f"Delayed Transitions: {len(overdue_list)} ({summary['delayed_pct']}%)")
+    print(f"  - Improperly Planned:  {len(improper_list)}")
+    print(f"  - Late Cont. Incorp:   {len(late_cont_list)}")
+    print(f"  - Late Client Review:  {len(late_client_list)}")
+    print(f"  - Compound Delay:      {len(compound_list)}")
+    print(f"Contractor Overrun Pct:  {cont_overrun_pct}% (Threshold >50%: {macro_justification_flag})")
     return True
 
 if __name__ == '__main__':
