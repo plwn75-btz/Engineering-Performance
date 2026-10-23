@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Z1F Vendor Document Review Duration Dashboard | Contractor vs Client Tracking</title>
-  <meta name="description" content="Vendor Document review duration tracking dashboard for Z1F Project. Monitors vendor package submissions and Client review turnaround times in 10 working days.">
+  <title>ASK Vendor Document Review Duration Dashboard | Contractor vs Client Tracking</title>
+  <meta name="description" content="Vendor Document review duration tracking dashboard for ASK Project. Monitors vendor package submissions and Client review turnaround times in 10 working days.">
   <link rel="stylesheet" href="styles.css">
   <style>
     /* Additional custom styling for Vendor Dashboard */
@@ -109,7 +109,7 @@
     <nav class="hub-nav">
       <div class="hub-nav-brand">
         <span style="width: 9px; height: 9px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #0284c7; display: inline-block;"></span>
-        <span>Z1F and ASK Project Document Intelligence Hub</span>
+        <span>ASK Project Document Intelligence Hub</span>
       </div>
       <div class="hub-nav-links">
         <a href="index.html" class="nav-tab-link">
@@ -141,15 +141,17 @@
           </svg>
         </div>
         <div class="brand-title">
-          <h1><span id="projectHeaderTitlePrefix">Z1F</span> Vendor Document Review Duration Dashboard</h1>
+          <h1>ASK Vendor Document Review Duration Dashboard</h1>
           <div class="brand-subtitle">
-            <span class="badge-tag" id="headerReportDate">Report Date: 16-Oct-2026</span>
+            <span class="badge-tag" id="headerReportDate">Report Date: 18-Sep-2026</span>
+            <span>&bull;</span>
+            <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
+              Scope: Vendor Deliverables
+            </span>
           </div>
         </div>
       </div>
       <div class="header-actions">
-        <!-- Project Switcher Pill Group (Z1F vs ASK) -->
-        <div id="projectSwitcher" class="project-switcher-container"></div>
         <button id="openSlaDefBtn" class="btn-sla-info" title="What is SLA? Service Level Agreement Definition">
           ℹ️ What is SLA?
         </button>
@@ -184,17 +186,39 @@
       </div>
     </header>
 
-    <!-- Vendor Package Quick Navigation Bar (Populated dynamically by app_vendor.js) -->
+    <!-- Vendor Package Quick Navigation Bar -->
     <nav class="vendor-pkg-nav" id="vendorPkgNav" aria-label="Vendor Package Filter">
       <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-muted); padding-right:6px; border-right:1px solid var(--border-color);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         Package:
       </div>
-      <div id="pkgTabsContainer" style="display:inline-flex; align-items:center; gap:8px;">
-        <button class="pkg-tab active" data-package="ALL" id="pkgTabAll">
-          All Packages <span class="pkg-tab-badge" id="pkgTabCountAll">535</span>
-        </button>
-      </div>
+      <button class="pkg-tab active" data-package="ALL" id="pkgTabAll">
+        All Packages <span class="pkg-tab-badge" id="pkgTabCountAll">188</span>
+      </button>
+      <button class="pkg-tab" data-package="Chemical Injection Skid">
+        Chemical Injection Skid <span class="pkg-tab-badge">30</span>
+      </button>
+      <button class="pkg-tab" data-package="Plate">
+        Plate <span class="pkg-tab-badge">27</span>
+      </button>
+      <button class="pkg-tab" data-package="Pedestal Cranes">
+        Pedestal Cranes <span class="pkg-tab-badge">16</span>
+      </button>
+      <button class="pkg-tab" data-package="Wellhead Control Panel">
+        Wellhead Control Panel <span class="pkg-tab-badge">14</span>
+      </button>
+      <button class="pkg-tab" data-package="Closed Drain Sump Pump">
+        Closed Drain Sump Pump <span class="pkg-tab-badge">13</span>
+      </button>
+      <button class="pkg-tab" data-package="Storage Tank">
+        Storage Tank <span class="pkg-tab-badge">12</span>
+      </button>
+      <button class="pkg-tab" data-package="Diesel Transfer Pump">
+        Diesel Transfer Pump <span class="pkg-tab-badge">11</span>
+      </button>
+      <button class="pkg-tab" data-package="Open Drain Pump">
+        Open Drain Pump <span class="pkg-tab-badge">11</span>
+      </button>
     </nav>
 
     <!-- Filter Bar -->
@@ -234,20 +258,20 @@
       <div class="filter-row">
         <div class="category-pills" id="categoryPills">
           <button class="pill-btn active" data-category="ALL">
-            All Submissions <span class="pill-count" id="countAll">535</span>
+            All Submissions <span class="pill-count" id="countAll">188</span>
           </button>
           <button class="pill-btn pill-within" data-category="<= 10 Days">
-            <span style="color:#10b981;">●</span> Within 10 Working Days (&le; 10 WD) <span class="pill-count" id="countWithin">324</span>
+            <span style="color:#10b981;">●</span> Within 10 Working Days (&le; 10 WD) <span class="pill-count" id="countWithin">74</span>
           </button>
           <button class="pill-btn pill-over" data-category="> 10 Days">
-            <span style="color:#f43f5e;">●</span> Over 10 Working Days (> 10 WD) <span class="pill-count" id="countOver">71</span>
+            <span style="color:#f43f5e;">●</span> Over 10 Working Days (> 10 WD) <span class="pill-count" id="countOver">9</span>
           </button>
           <button class="pill-btn pill-pending" data-category="Pending">
-            <span style="color:#f59e0b;">●</span> Pending Review <span class="pill-count" id="countPending">140</span>
+            <span style="color:#f59e0b;">●</span> Pending Review <span class="pill-count" id="countPending">105</span>
           </button>
         </div>
         <div style="font-size: 12px; color: var(--text-muted);" id="filterStatusText">
-          Showing 535 submissions
+          Showing 188 submissions
         </div>
       </div>
     </section>
@@ -262,9 +286,9 @@
             📦
           </div>
         </div>
-        <div class="kpi-value" id="kpiTotal">535</div>
+        <div class="kpi-value" id="kpiTotal">188</div>
         <div class="kpi-meta">
-          <span>Unique Documents: <strong id="kpiUniqueDocs">454</strong></span>
+          <span>Unique Documents: <strong id="kpiUniqueDocs">142</strong></span>
           <span class="badge-tag">100%</span>
         </div>
       </div>
@@ -277,9 +301,9 @@
             ✓
           </div>
         </div>
-        <div class="kpi-value" style="color: #10b981;" id="kpiWithin10">324</div>
+        <div class="kpi-value" style="color: #10b981;" id="kpiWithin10">74</div>
         <div class="kpi-meta">
-          <span>Meet Agreement: <strong id="kpiWithinPct">82.0%</strong> of completed</span>
+          <span>Meet Agreement: <strong id="kpiWithinPct">89.2%</strong> of completed</span>
           <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Target Met</span>
         </div>
       </div>
@@ -292,9 +316,9 @@
             ⚠
           </div>
         </div>
-        <div class="kpi-value" style="color: #f43f5e;" id="kpiOver10">71</div>
+        <div class="kpi-value" style="color: #f43f5e;" id="kpiOver10">9</div>
         <div class="kpi-meta">
-          <span>Over Agreement: <strong id="kpiOverPct">18.0%</strong> of completed</span>
+          <span>Over Agreement: <strong id="kpiOverPct">10.8%</strong> of completed</span>
           <span class="badge-tag" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">Exceeded</span>
         </div>
       </div>
@@ -307,9 +331,9 @@
             ⏳
           </div>
         </div>
-        <div class="kpi-value" style="color: #f59e0b;" id="kpiPending">140</div>
+        <div class="kpi-value" style="color: #f59e0b;" id="kpiPending">105</div>
         <div class="kpi-meta">
-          <span>Awaiting Out Date: <strong id="kpiPendingPct">26.2%</strong></span>
+          <span>Awaiting Out Date: <strong id="kpiPendingPct">55.9%</strong></span>
           <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Active</span>
         </div>
       </div>
@@ -322,7 +346,7 @@
             ⏱
           </div>
         </div>
-        <div class="kpi-value" id="kpiAvgDuration">7.8 <span style="font-size:16px; font-weight:500; color:var(--text-secondary);">WD</span></div>
+        <div class="kpi-value" id="kpiAvgDuration">8.2 <span style="font-size:16px; font-weight:500; color:var(--text-secondary);">WD</span></div>
         <div class="kpi-meta">
           <span>Contractual Benchmark: <strong>&le; 10 WD</strong></span>
           <a href="javascript:void(0)" id="slaBadgeBtn" class="sla-badge-interactive" title="Click to view full Service Level Agreement (SLA) Definition">
@@ -528,7 +552,7 @@
             </div>
             <div>
               <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Service Level Agreement (SLA) Definition</h3>
-              <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">Z1F Project Procedural Engineering Turnaround Standards</p>
+              <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">ASK Project Procedural Engineering Turnaround Standards</p>
             </div>
           </div>
           <button id="slaModalCloseBtn" class="btn-icon" aria-label="Close Modal">&times;</button>
@@ -539,7 +563,7 @@
               <span>🎯</span> Contractual Baseline: 10 Working Days
             </h4>
             <p style="margin: 0; color: var(--text-primary);">
-              <strong>SLA</strong> stands for <strong>Service Level Agreement</strong>. In the Z1F Field Development Project, the SLA defines the maximum contractual turnaround period allowed for the <strong>Client Engineering Team</strong> to review and officially return submitted technical &amp; vendor deliverables.
+              <strong>SLA</strong> stands for <strong>Service Level Agreement</strong>. In the ASK Field Development Project, the SLA defines the maximum contractual turnaround period allowed for the <strong>Client Engineering Team</strong> to review and officially return submitted technical &amp; vendor deliverables.
             </p>
           </div>
 
@@ -586,7 +610,7 @@
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" style="margin-bottom: 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <h4 style="margin: 0 0 6px 0; font-size: 15px; color: var(--text-primary);">Drag &amp; Drop your new Excel Report here</h4>
             <p style="margin: 0 0 16px 0; font-size: 12px; color: var(--text-secondary);">
-              Supports Technical Log (<code>.xlsx</code>), Vendor Log (<code>.xls/.xlsx</code>), or EDSR Registers (<code>.xlsx/.xlsm</code>)
+              Supports Technical Log (<code>.xlsx</code>), Vendor Log (<code>.xls/.xlsx</code>), or MDR Register (<code>.xlsx</code>)
             </p>
             <input type="file" id="fileUploadInput" accept=".xlsx,.xls" style="display: none;">
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileUploadInput').click()">
@@ -599,7 +623,7 @@
           </div>
 
           <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted); line-height: 1.5; border-top: 1px solid var(--border-color); padding-top: 14px;">
-            💡 <strong>Automatic Date Detection:</strong> Weekly filenames with changing dates (e.g. <code>Z1F Technical Document Log Report - 16 Oct 26.xlsx</code> or <code>Z1F Vendor Document Log Report - 16 Oct 26.xls</code>) are automatically parsed, recalculated with 10 working days criteria, and reflected immediately on this dashboard.
+            💡 <strong>Automatic Date Detection:</strong> Weekly filenames with changing dates (e.g. <code>ASK Technical Document Log Report - 25 Sep 26.xlsx</code> or <code>ASK Vendor Document Log Report - 25 Sep 26.xls</code>) are automatically parsed, recalculated with 10 working days criteria, and reflected immediately on this dashboard.
           </div>
         </div>
       </div>
@@ -608,7 +632,7 @@
     <!-- Footer -->
     <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
       <div>
-        <strong>Z1F and ASK Project Intelligence Hub</strong> &bull; Vendor Document Review Tracking
+        <strong>ASK Field Development Project</strong> &bull; Vendor Document Review Tracking &bull; Data Cut-off: 18-Sep-2026
       </div>
       <div>
         Standard SLA: <strong>10 Working Days (Mon&ndash;Fri)</strong>
@@ -616,15 +640,8 @@
     </footer>
   </div>
 
-  <!-- Project Manager & Multi-Project Dataset Bootstrapper -->
-  <script src="project_manager.js"></script>
-  <script>
-    (function() {
-      var proj = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
-      var src = (proj === 'ASK') ? 'ask_vendor_data.js' : 'z1f_vendor_data.js';
-      document.write('<script src="' + src + '"><\/script>');
-    })();
-  </script>
+  <!-- Data Script -->
+  <script src="vendor_data.js"></script>
   <!-- Application Script -->
   <script src="app_vendor.js"></script>
 </body>

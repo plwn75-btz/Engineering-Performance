@@ -1,6 +1,6 @@
 """
-Z1F Document Intelligence Hub - Web Application Server
-Z1F Project
+ASK Document Intelligence Hub - Web Application Server
+Production-ready Flask application for Render.com and local deployment.
 Serves dashboards and provides automated Excel report upload and data processing endpoints.
 """
 
@@ -17,7 +17,7 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB max file size
 
 # Allowed extensions
-ALLOWED_EXTENSIONS = {'.xlsx', '.xls', '.xlsm'}
+ALLOWED_EXTENSIONS = {'.xlsx', '.xls'}
 
 def allowed_file(filename):
     return os.path.splitext(filename)[1].lower() in ALLOWED_EXTENSIONS
@@ -132,5 +132,5 @@ def serve_static(path):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"Starting Z1F Document Intelligence Hub on port {port}...")
+    print(f"Starting ASK Document Intelligence Hub on port {port}...")
     app.run(host="0.0.0.0", port=port, debug=False)

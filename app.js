@@ -1,6 +1,5 @@
 /**
- * Z1F Technical Document Review Duration Dashboard - Application Logic
- * Z1F Project
+ * ASK Technical Document Review Duration Dashboard - Application Logic
  */
 
 (function () {
@@ -14,9 +13,8 @@
     pageSize: 25,
     sortField: 'actual_submit_in',
     sortDirection: 'desc',
-    activeContractor: 'ALL', // Contractor filter (Topside without Structure, Jacket & Piles, Topside Structure, WP2, PMT)
     activeCategory: 'ALL',
-    activeDocCategory: 'ALL', // Default to ALL to show full contractor engineering work
+    activeDocCategory: 'Part B - Engineering Doc', // Default focus requested by user
     activeDiscipline: 'ALL',
     activeRev: 'ALL',
     activeStatus: 'ALL',
@@ -26,7 +24,7 @@
     currentTier: null,
     currentTierItems: [],
     searchQuery: '',
-    theme: localStorage.getItem('z1f_dash_theme') || 'dark',
+    theme: localStorage.getItem('ask_dash_theme') || 'dark',
     docsMap: new Map() // Grouping by doc_no for fast multi-revision lookup
   };
 
@@ -189,65 +187,6 @@
       el.statusSelect.appendChild(opt);
     });
 
-    // Populate Contractor / Work Package Scope Navigation
-    const navCont = document.getElementById('contractorScopeNav');
-    if (navCont && window.ZDocProjectManager) {
-      const cfg = window.ZDocProjectManager.getConfig();
-      const isAsk = (cfg.id === 'ASK');
-
-      // Build scope items
-      let html = `
-        <div class="contractor-nav-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-          ${isAsk ? 'Work Package:' : 'Contractor:'}
-        </div>
-      `;
-
-      cfg.scopes.forEach(sc => {
-        let count = 0;
-        if (sc.id === 'ALL') {
-          count = state.rawData.length;
-        } else if (isAsk) {
-          count = state.rawData.filter(x => (x.contractor || '') === sc.id).length;
-        } else {
-          // Z1F contractor matching
-          if (sc.id === 'Topside without Structure') {
-            count = state.rawData.filter(x => (x.contractor || '').includes('without Structure') || (x.contractor || '').includes('Worley')).length;
-          } else if (sc.id === 'Jacket & Piles') {
-            count = state.rawData.filter(x => (x.contractor || '').includes('Jacket')).length;
-          } else if (sc.id === 'Topside Structure') {
-            count = state.rawData.filter(x => ((x.contractor || '').includes('Structure') && !(x.contractor || '').includes('without')) || (x.contractor || '') === 'Topsides').length;
-          } else if (sc.id === 'WP2 Pipeline') {
-            count = state.rawData.filter(x => (x.contractor || '').includes('WP2') || (x.contractor || '').includes('Pipeline')).length;
-          } else if (sc.id === 'Project Management & Ops') {
-            count = state.rawData.filter(x => (x.contractor || '').includes('Project Management') || (x.contractor || '').includes('Ops')).length;
-          }
-        }
-        const isActive = (state.activeContractor === sc.id);
-        html += `
-          <button class="contractor-tab ${isActive ? 'active' : ''}" data-contractor="${sc.id}">
-            ${sc.label} <span class="tab-badge">${formatNumber(count)}</span>
-          </button>
-        `;
-      });
-      navCont.innerHTML = html;
-
-      // Re-bind click handlers
-      navCont.querySelectorAll('.contractor-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          navCont.querySelectorAll('.contractor-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          state.activeContractor = tab.getAttribute('data-contractor');
-          applyFilters();
-        });
-      });
-    }
-
     // Populate Category Tab Counts
     const countPartB = state.rawData.filter(x => x.doc_category === 'Part B - Engineering Doc').length;
     const countPartA = state.rawData.filter(x => x.doc_category === 'Part A - Project Management Doc').length;
@@ -277,23 +216,7 @@
     const status = state.activeStatus;
 
     state.filteredData = state.rawData.filter(item => {
-      // Contractor / Work Package Scope Filter
-      if (state.activeContractor !== 'ALL') {
-        const c = item.contractor || '';
-        const isAsk = window.ZDocProjectManager && window.ZDocProjectManager.getActiveProject() === 'ASK';
-        if (isAsk) {
-          if (c !== state.activeContractor) return false;
-        } else {
-          // Z1F 4-Contractor logic
-          if (state.activeContractor === 'Topside without Structure' && !c.includes('without Structure') && !c.includes('Worley')) return false;
-          else if (state.activeContractor === 'Jacket & Piles' && !c.includes('Jacket')) return false;
-          else if (state.activeContractor === 'Topside Structure' && (!c.includes('Structure') || c.includes('without'))) return false;
-          else if (state.activeContractor === 'WP2 Pipeline' && !c.includes('WP2') && !c.includes('Pipeline')) return false;
-          else if (state.activeContractor === 'Project Management & Ops' && !c.includes('Project Management') && !c.includes('Ops')) return false;
-        }
-      }
-
-      // Document Category Scope (ALL by default, or specific Part)
+      // Document Category Scope (Part B focus by default, Part A & Part E optional)
       if (state.activeDocCategory !== 'ALL' && item.doc_category !== state.activeDocCategory) {
         return false;
       }
@@ -1236,7 +1159,6 @@
 
     const headers = [
       'Submittal ID',
-      'Contractor',
       'Document No.',
       'Rev.',
       'Document Title',
@@ -1252,7 +1174,6 @@
 
     const rows = state.filteredData.map(d => [
       `"${d.submittal_id || ''}"`,
-      `"${d.contractor || ''}"`,
       `"${d.doc_no || ''}"`,
       `"${d.rev || ''}"`,
       `"${(d.doc_title || '').replace(/"/g, '""')}"`,
@@ -1269,9 +1190,9 @@
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const projPrefix = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
-    const scopeName = (state.activeContractor || 'ALL').replace(/[\s\/]+/g, '_');
-    link.setAttribute('download', `${projPrefix}_Doc_Review_Report_${scopeName}_${state.activeCategory.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ASK_Doc_Review_Report_${state.activeCategory.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1286,7 +1207,7 @@
     el.themeToggleBtn.addEventListener('click', () => {
       state.theme = state.theme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', state.theme);
-      localStorage.setItem('z1f_dash_theme', state.theme);
+      localStorage.setItem('ask_dash_theme', state.theme);
       updateThemeIcon();
     });
   }
@@ -1354,17 +1275,7 @@
       renderTable();
     });
 
-    // Contractor Scope Tabs (4 Contractor Sets + Combined)
-    document.querySelectorAll('.contractor-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.contractor-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        state.activeContractor = tab.getAttribute('data-contractor');
-        applyFilters();
-      });
-    });
-
-    // Document Category Scope Tabs (ALL, Part B, Part C, Part A, Part E)
+    // Document Category Scope Tabs (Part B focus by default, Part A & Part E optional)
     document.querySelectorAll('.doc-category-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.doc-category-tab').forEach(t => t.classList.remove('active'));
@@ -1378,9 +1289,8 @@
     el.resetFiltersBtn.addEventListener('click', () => {
       state.searchQuery = '';
       el.searchInput.value = '';
-      state.activeContractor = 'ALL';
       state.activeCategory = 'ALL';
-      state.activeDocCategory = 'ALL';
+      state.activeDocCategory = 'Part B - Engineering Doc'; // Reset back to default focus Part B
       state.activeDiscipline = 'ALL';
       el.disciplineSelect.value = 'ALL';
       state.activeRev = 'ALL';
@@ -1389,14 +1299,9 @@
       el.statusSelect.value = 'ALL';
       state.activeTier = null; // Clear tier filter
 
-      // Reset contractor scope tabs
-      document.querySelectorAll('.contractor-tab').forEach(t => {
-        t.classList.toggle('active', t.getAttribute('data-contractor') === 'ALL');
-      });
-
       // Reset category scope tabs
       document.querySelectorAll('.doc-category-tab').forEach(t => {
-        t.classList.toggle('active', t.getAttribute('data-category-scope') === 'ALL');
+        t.classList.toggle('active', t.getAttribute('data-category-scope') === 'Part B - Engineering Doc');
       });
 
       el.categoryPills.querySelectorAll('.pill-btn').forEach(btn => {

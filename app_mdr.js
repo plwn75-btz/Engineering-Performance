@@ -1,6 +1,6 @@
 /**
- * Z1F Technical Document Workflow & Revision Lifecycle Dashboard (EDSR)
- * Interactive logic for EDSR 4 Contractor Scopes tracking, milestone pipeline,
+ * ASK Technical Document Workflow & Revision Lifecycle Dashboard (MDR)
+ * Interactive logic for MDR 5 Work Package tracking, milestone pipeline,
  * contractor incorporation duration analysis (IFR-IFA, IFA-AFC, AFC-AP) for Part B vs Part C,
  * and interactive lifecycle drawer.
  */
@@ -24,7 +24,7 @@
     pageSize: 50,
     sortColumn: 'doc_no',
     sortDirection: 'asc',
-    theme: localStorage.getItem('z1f_dash_theme') || 'dark',
+    theme: localStorage.getItem('ask_dash_theme') || 'dark',
     selectedDoc: null
   };
 
@@ -39,10 +39,11 @@
     // WP Tabs
     wpTabsContainer: document.getElementById('wpTabsContainer'),
     tabCountAll: document.getElementById('tabCountAll'),
-    tabCountTopsideNoStr: document.getElementById('tabCountTopsideNoStr') || document.getElementById('tabCountWorley'),
-    tabCountJacket: document.getElementById('tabCountJacket'),
-    tabCountTopsideStr: document.getElementById('tabCountTopsideStr') || document.getElementById('tabCountTopsides'),
-    tabCountPipeline: document.getElementById('tabCountPipeline'),
+    tabCountWP01Top: document.getElementById('tabCountWP01Top'),
+    tabCountWP01Jkt: document.getElementById('tabCountWP01Jkt'),
+    tabCountWP02Top: document.getElementById('tabCountWP02Top'),
+    tabCountWP02Jkt: document.getElementById('tabCountWP02Jkt'),
+    tabCountProEng: document.getElementById('tabCountProEng'),
 
     // Filters
     searchInput: document.getElementById('searchInput'),
@@ -214,7 +215,7 @@
   function toggleTheme() {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', state.theme);
-    localStorage.setItem('z1f_dash_theme', state.theme);
+    localStorage.setItem('ask_dash_theme', state.theme);
     setupTheme();
   }
 
@@ -238,44 +239,27 @@
 
   // --- Update Tab Badges ---
   function updateTabBadges() {
-    const isAsk = window.ZDocProjectManager && window.ZDocProjectManager.getActiveProject() === 'ASK';
-    const cfg = window.ZDocProjectManager ? window.ZDocProjectManager.getConfig() : null;
+    const counts = {
+      ALL: state.allData.length,
+      'WP01 TOPSIDE': 0,
+      'WP01 JACKET': 0,
+      'WP02 TOPSIDE': 0,
+      'WP02 JACKET': 0,
+      'PRO.ENGINEERING_MR TBE': 0
+    };
 
-    // Update Section Label if present
-    const scopeLabelEl = document.getElementById('scopeSectionLabel');
-    if (scopeLabelEl && cfg) {
-      scopeLabelEl.textContent = isAsk ? 'SELECT WORK PACKAGE SCOPE:' : 'SELECT CONTRACTOR SCOPE:';
-    }
+    state.allData.forEach(d => {
+      if (counts[d.work_package] !== undefined) {
+        counts[d.work_package]++;
+      }
+    });
 
-    if (el.wpTabsContainer && cfg) {
-      let html = '';
-      cfg.scopes.forEach(sc => {
-        let count = 0;
-        if (sc.id === 'ALL') {
-          count = state.allData.length;
-        } else if (isAsk) {
-          count = state.allData.filter(d => (d.contractor === sc.id || d.work_package === sc.id || d.contractor_set === sc.id)).length;
-        } else {
-          count = state.allData.filter(d => {
-            const wp = d.contractor || d.work_package || '';
-            if (sc.id === 'Topside without Structure') return wp.includes('without Structure') || wp.includes('Worley');
-            if (sc.id === 'Jacket & Piles') return wp.includes('Jacket');
-            if (sc.id === 'Topside Structure') return (wp.includes('Structure') && !wp.includes('without')) || wp === 'Topsides';
-            if (sc.id === 'WP2 Pipeline') return wp.includes('WP2') || wp.includes('Pipeline');
-            return false;
-          }).length;
-        }
-
-        const isActive = (state.selectedWorkPackage === sc.id);
-        html += `
-          <button class="wp-tab ${isActive ? 'active' : ''}" data-wp="${sc.id}">
-            <span class="tab-name">${sc.label}</span>
-            <span class="tab-badge">${count.toLocaleString()}</span>
-          </button>
-        `;
-      });
-      el.wpTabsContainer.innerHTML = html;
-    }
+    if (el.tabCountAll) el.tabCountAll.textContent = counts.ALL.toLocaleString();
+    if (el.tabCountWP01Top) el.tabCountWP01Top.textContent = counts['WP01 TOPSIDE'].toLocaleString();
+    if (el.tabCountWP01Jkt) el.tabCountWP01Jkt.textContent = counts['WP01 JACKET'].toLocaleString();
+    if (el.tabCountWP02Top) el.tabCountWP02Top.textContent = counts['WP02 TOPSIDE'].toLocaleString();
+    if (el.tabCountWP02Jkt) el.tabCountWP02Jkt.textContent = counts['WP02 JACKET'].toLocaleString();
+    if (el.tabCountProEng) el.tabCountProEng.textContent = counts['PRO.ENGINEERING_MR TBE'].toLocaleString();
 
     // Category Counts
     const partBAll = state.allData.filter(d => d.doc_category === 'Part B - Engineering Doc').length;
@@ -289,22 +273,9 @@
   function applyFilters() {
     let data = state.allData;
 
-    // 1. Contractor / Work Package
+    // 1. Work Package
     if (state.selectedWorkPackage !== 'ALL') {
-      const isAsk = window.ZDocProjectManager && window.ZDocProjectManager.getActiveProject() === 'ASK';
-      data = data.filter(d => {
-        const wp = d.contractor || d.work_package || d.contractor_set || '';
-        if (isAsk) {
-          return wp === state.selectedWorkPackage;
-        }
-        if (state.selectedWorkPackage === 'Topside without Structure') {
-          return wp.includes('without Structure') || wp.includes('Worley');
-        }
-        if (state.selectedWorkPackage === 'Topside Structure') {
-          return (wp.includes('Structure') && !wp.includes('without')) || wp === 'Topsides';
-        }
-        return wp.includes(state.selectedWorkPackage) || state.selectedWorkPackage.includes(wp);
-      });
+      data = data.filter(d => d.work_package === state.selectedWorkPackage);
     }
 
     // 2. Category (Part B - Engineering Doc vs Part C - Engineering Dwg)
@@ -1218,17 +1189,14 @@
       d.ap.code || ''
     ]);
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    const projPrefix = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${projPrefix}_Deliverable_Lifecycle_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `ASK_MDR_Workflow_Export_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   }
 
   // --- Reset All Filters ---
@@ -1377,9 +1345,9 @@
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 13px; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em;">Current Analysis Scope:</span>
           <span style="font-size: 13px; font-weight: 800; color: #ffffff;">${scopeLabel}</span>
-          <span style="font-size: 12px; color: var(--text-muted);">(${totalDocs.toLocaleString()} documents &bull; ${window.ZDocProjectManager ? window.ZDocProjectManager.getConfig().name : 'Z1F'})</span>
+          <span style="font-size: 12px; color: var(--text-muted);">(${totalDocs.toLocaleString()} documents &bull; Contractor: zm167dc@jutal.com)</span>
         </div>
-        <span style="font-size: 12px; color: #34d399; font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 3px 10px; border-radius: var(--radius-full);">Live Data Cut-off: ${window.MDR_REPORT_DATE || 'Latest'}</span>
+        <span style="font-size: 12px; color: #34d399; font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 3px 10px; border-radius: var(--radius-full);">Live Data Cut-off: 18-Sep-26</span>
       </div>
 
       <!-- 1. Executive KPI Scorecard -->
@@ -1432,7 +1400,7 @@
         </div>
 
         <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6;">
-          Under Goldratt's <strong>Theory of Constraints</strong>, any improvements made outside the system's primary constraint are illusions of efficiency. Analysis of the ${totalDocs.toLocaleString()}-document workflow reveals that <strong>Contractor comment incorporation is the pacing bottleneck</strong>, consuming approximately <strong>${contractorShare}% of the entire revision lead time</strong>.
+          Under Goldratt's <strong>Theory of Constraints</strong>, any improvements made outside the system's primary constraint are illusions of efficiency. Analysis of the 1,904-document workflow reveals that <strong>Contractor comment incorporation is the pacing bottleneck</strong>, consuming approximately <strong>${contractorShare}% of the entire revision lead time</strong>.
         </p>
 
         <div class="toc-pipeline-visual">
@@ -1570,15 +1538,15 @@
             <span class="exec-tool-tag raci">RACI Matrix</span>
             <h3 class="exec-section-title">Operational Responsibility &amp; Accountability Framework</h3>
           </div>
-          <span style="font-size: 12px; color: var(--text-muted);">Contractor Teams vs Client (Z1F PMT)</span>
+          <span style="font-size: 12px; color: var(--text-muted);">Contractor (Jutal) vs Client (ASK PMT)</span>
         </div>
 
         <table class="raci-table">
           <thead>
             <tr>
               <th>Workflow Phase</th>
-              <th style="width: 25%;">Contractor Teams (4 Scopes)</th>
-              <th style="width: 25%;">Client Engineering (Z1F PMT)</th>
+              <th style="width: 25%;">Contractor Team (Jutal)</th>
+              <th style="width: 25%;">Client Engineering (ASK)</th>
               <th>Contractual Milestone / Deliverable</th>
             </tr>
           </thead>
@@ -1586,7 +1554,7 @@
             <tr>
               <td><strong>1. Initial Design &amp; IFR Submittal</strong></td>
               <td><span class="raci-pill a">A</span> <span class="raci-pill r">R</span> Accountable for design quality and submittal on baseline plan date.</td>
-              <td><span class="raci-pill i">I</span> Document Control logs receipt into EDSR register.</td>
+              <td><span class="raci-pill i">I</span> Document Control logs receipt into MDR register.</td>
               <td>Issue For Review (IFR / Rev A1)</td>
             </tr>
             <tr>
@@ -1640,7 +1608,7 @@
               <span>Joint Comment Resolution Meetings (CRM)</span>
             </div>
             <div class="dmaic-desc">
-              Institute a mandatory 48-hour CRM after Client returns any document with over 15 comments. Aligns technical expectations directly between Contractor and Z1F leads before drafting starts, cutting incorporation lead time from 27d down to 14d.
+              Institute a mandatory 48-hour CRM after Client returns any document with over 15 comments. Aligns technical expectations directly between Jutal and ASK leads before drafting starts, cutting incorporation lead time from 27d down to 14d.
             </div>
           </div>
 

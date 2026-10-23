@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Z1F Document Review Duration Dashboard | Contractor vs Client Tracking</title>
-  <meta name="description" content="Technical Document review duration tracking dashboard for Z1F Project. Monitors submittal turnaround and Client review times.">
+  <title>ASK Document Review Duration Dashboard | Contractor vs Client Tracking</title>
+  <meta name="description" content="Technical Document review duration tracking dashboard for ASK Project. Monitors submittal turnaround and Client review times.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,8 +12,8 @@
     <!-- Top Nav: Switch between dashboards -->
     <nav class="hub-nav">
       <div class="hub-nav-brand">
-        <span style="width: 9px; height: 9px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #0284c7; display: inline-block;"></span>
-        <span>Z1F and ASK Project Document Intelligence Hub</span>
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #818cf8; box-shadow: 0 0 10px #6366f1; display: inline-block;"></span>
+        <span>ASK Project Document Intelligence Hub</span>
       </div>
       <div class="hub-nav-links">
         <a href="index.html" class="nav-tab-link active-tech">
@@ -26,7 +26,7 @@
         </a>
         <a href="index_mdr.html" class="nav-tab-link">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
-          Deliverable Revision Lifecycle Dashboard
+          MDR Revision Lifecycle Dashboard
         </a>
         <a href="index_analytics.html" class="nav-tab-link">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -48,15 +48,17 @@
           </svg>
         </div>
         <div class="brand-title">
-          <h1><span id="projectHeaderTitlePrefix">Z1F</span> Technical Document Review Duration Dashboard</h1>
+          <h1>ASK Document Review Duration Dashboard</h1>
           <div class="brand-subtitle">
-            <span class="badge-tag" id="headerReportDate">Report Date: 16-Oct-2026</span>
+            <span class="badge-tag" id="headerReportDate">Report Date: 18-Sep-2026</span>
+            <span>&bull;</span>
+            <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">
+              Focus: Part B - Engineering Doc
+            </span>
           </div>
         </div>
       </div>
       <div class="header-actions">
-        <!-- Project Switcher Pill Group (Z1F vs ASK) -->
-        <div id="projectSwitcher" class="project-switcher-container"></div>
         <button id="openSlaDefBtn" class="btn-sla-info" title="What is SLA? Service Level Agreement Definition">
           ℹ️ What is SLA?
         </button>
@@ -91,38 +93,7 @@
       </div>
     </header>
 
-    <!-- Contractor Scope Navigation Bar (4 Contractor Sets + Combined) -->
-    <nav class="contractor-scope-nav" id="contractorScopeNav" aria-label="Contractor Scope Filter">
-      <div class="contractor-nav-label">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        Contractor:
-      </div>
-      <button class="contractor-tab active" data-contractor="ALL" id="tabContAll">
-        All Contractors <span class="tab-badge" id="tabCountContAll">3,780</span>
-      </button>
-      <button class="contractor-tab" data-contractor="Topside without Structure" id="tabContTopsideNoStr">
-        Topside without Structure <span class="tab-badge" id="tabCountContTopsideNoStr">1,179</span>
-      </button>
-      <button class="contractor-tab" data-contractor="Jacket & Piles" id="tabContJacket">
-        Jacket &amp; Piles <span class="tab-badge" id="tabCountContJacket">1,073</span>
-      </button>
-      <button class="contractor-tab" data-contractor="Topside Structure" id="tabContTopsideStr">
-        Topside Structure <span class="tab-badge" id="tabCountContTopsideStr">420</span>
-      </button>
-      <button class="contractor-tab" data-contractor="WP2 Pipeline" id="tabContPipeline">
-        WP2 Pipeline <span class="tab-badge" id="tabCountContPipeline">416</span>
-      </button>
-      <button class="contractor-tab" data-contractor="Project Management & Ops" id="tabContPJM">
-        PMT &amp; Operations <span class="tab-badge" id="tabCountContPJM">611</span>
-      </button>
-    </nav>
-
-    <!-- Document Category Navigation Bar -->
+    <!-- Document Category Navigation Bar (Part B Focus by default) -->
     <nav class="doc-category-nav" id="docCategoryNav" aria-label="Document Category Filter">
       <div class="doc-category-nav-label">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -130,22 +101,22 @@
           <polyline points="2 17 12 22 22 17"></polyline>
           <polyline points="2 12 12 17 22 12"></polyline>
         </svg>
-        Category:
+        Scope:
       </div>
-      <button class="doc-category-tab active" data-category-scope="ALL" id="tabPartAll">
-        All Categories <span class="tab-badge" id="tabCountPartAll">3,780</span>
-      </button>
-      <button class="doc-category-tab focus-part-b" data-category-scope="Part B - Engineering Doc" id="tabPartB">
-        Part B - Engineering Doc <span class="tab-badge" id="tabCountPartB">1,440</span>
-      </button>
-      <button class="doc-category-tab" data-category-scope="Part C - Engineering Dwg" id="tabPartC">
-        Part C - Engineering Dwg <span class="tab-badge" id="tabCountPartC">1,725</span>
+      <button class="doc-category-tab focus-part-b active" data-category-scope="Part B - Engineering Doc" id="tabPartB">
+        ★ Part B - Engineering Doc <span class="tab-badge" id="tabCountPartB">1,154</span>
       </button>
       <button class="doc-category-tab" data-category-scope="Part A - Project Management Doc" id="tabPartA">
-        Part A - Project Mgmt Doc <span class="tab-badge" id="tabCountPartA">503</span>
+        Part A - Project Mgmt Doc <span class="tab-badge" id="tabCountPartA">174</span>
       </button>
       <button class="doc-category-tab" data-category-scope="Part E - Fabrication Doc" id="tabPartE">
-        Part E - Fabrication Doc <span class="tab-badge" id="tabCountPartE">73</span>
+        Part E - Fabrication Doc <span class="tab-badge" id="tabCountPartE">13</span>
+      </button>
+      <button class="doc-category-tab" data-category-scope="Part C - Engineering Dwg" id="tabPartC">
+        Part C - Engineering Dwg <span class="tab-badge" id="tabCountPartC">1,704</span>
+      </button>
+      <button class="doc-category-tab" data-category-scope="ALL" id="tabPartAll">
+        All Categories <span class="tab-badge" id="tabCountPartAll">3,046</span>
       </button>
     </nav>
 
@@ -509,7 +480,7 @@
           </div>
           <div>
             <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Service Level Agreement (SLA) Definition</h3>
-            <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">Z1F Project Procedural Engineering Turnaround Standards</p>
+            <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">ASK Project Procedural Engineering Turnaround Standards</p>
           </div>
         </div>
         <button id="slaModalCloseBtn" class="drawer-close" aria-label="Close Modal">&times;</button>
@@ -520,7 +491,7 @@
             <span>🎯</span> Contractual Baseline: 10 Working Days
           </h4>
           <p style="margin: 0; color: var(--text-primary);">
-            <strong>SLA</strong> stands for <strong>Service Level Agreement</strong>. In the Z1F Project, the SLA defines the maximum contractual turnaround period allowed for the <strong>Client Engineering Team</strong> to review and officially return submitted technical &amp; vendor deliverables.
+            <strong>SLA</strong> stands for <strong>Service Level Agreement</strong>. In the ASK Field Development Project, the SLA defines the maximum contractual turnaround period allowed for the <strong>Client Engineering Team</strong> to review and officially return submitted technical &amp; vendor deliverables.
           </p>
         </div>
 
@@ -567,9 +538,9 @@
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" style="margin-bottom: 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
           <h4 style="margin: 0 0 6px 0; font-size: 15px; color: var(--text-primary);">Drag &amp; Drop your new Excel Report here</h4>
           <p style="margin: 0 0 16px 0; font-size: 12px; color: var(--text-secondary);">
-            Supports Technical Log (<code>.xlsx</code>), Vendor Log (<code>.xls/.xlsx</code>), or EDSR Register (<code>.xlsx/.xlsm</code>)
+            Supports Technical Log (<code>.xlsx</code>), Vendor Log (<code>.xls/.xlsx</code>), or MDR Register (<code>.xlsx</code>)
           </p>
-          <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.xlsm" style="display: none;">
+          <input type="file" id="fileUploadInput" accept=".xlsx,.xls" style="display: none;">
           <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileUploadInput').click()">
             Browse Files...
           </button>
@@ -580,21 +551,14 @@
         </div>
 
         <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted); line-height: 1.5; border-top: 1px solid var(--border-color); padding-top: 14px;">
-          💡 <strong>Automatic Date Detection:</strong> Weekly filenames with changing dates (e.g. <code>Z1F Technical Document Log Report - 16 Oct 26.xlsx</code> or <code>Z1F Vendor Document Log Report - 16 Oct 26.xls</code>) are automatically parsed, recalculated with 10 working days criteria, and reflected immediately on this dashboard.
+          💡 <strong>Automatic Date Detection:</strong> Weekly filenames with changing dates (e.g. <code>ASK Technical Document Log Report - 25 Sep 26.xlsx</code> or <code>ASK Vendor Document Log Report - 25 Sep 26.xls</code>) are automatically parsed, recalculated with 10 working days criteria, and reflected immediately on this dashboard.
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Project Manager & Multi-Project Dataset Bootstrapper -->
-  <script src="project_manager.js"></script>
-  <script>
-    (function() {
-      var proj = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
-      var src = (proj === 'ASK') ? 'ask_data.js' : 'z1f_data.js';
-      document.write('<script src="' + src + '"><\/script>');
-    })();
-  </script>
+  <!-- Load Pre-Compiled Dataset & Dashboard Logic -->
+  <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

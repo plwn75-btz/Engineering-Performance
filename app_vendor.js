@@ -1,6 +1,5 @@
 /**
- * Z1F Vendor Document Review Duration Dashboard - Application Logic
- * Z1F Project
+ * ASK Vendor Document Review Duration Dashboard - Application Logic
  */
 
 (function () {
@@ -25,7 +24,7 @@
     currentTier: null,
     currentTierItems: [],
     searchQuery: '',
-    theme: localStorage.getItem('z1f_vendor_theme') || 'dark',
+    theme: localStorage.getItem('ask_vendor_theme') || 'dark',
     docsMap: new Map()           // Grouping by doc_no for multi-revision lookup
   };
 
@@ -42,7 +41,6 @@
     statusSelect: document.getElementById('statusSelect'),
     categoryPills: document.getElementById('categoryPills'),
     vendorPkgNav: document.getElementById('vendorPkgNav'),
-    pkgTabsContainer: document.getElementById('pkgTabsContainer'),
     filterStatusText: document.getElementById('filterStatusText'),
 
     // KPI Elements
@@ -197,74 +195,6 @@
       opt.textContent = `${st} (${formatNumber(count)})`;
       el.statusSelect.appendChild(opt);
     });
-
-    // Populate Dynamic Package Navigation Bar
-    renderPackageNavTabs();
-  }
-
-  // Render Dynamic Package Navigation Tabs
-  function renderPackageNavTabs() {
-    const container = el.pkgTabsContainer;
-    if (!container) return;
-    container.innerHTML = '';
-
-    // Calculate submittal counts per package
-    const pkgCounts = new Map();
-    state.rawData.forEach(d => {
-      const pkg = d.vendor_package_name || 'General';
-      pkgCounts.set(pkg, (pkgCounts.get(pkg) || 0) + 1);
-    });
-
-    const sortedPkgs = Array.from(pkgCounts.entries()).sort((a, b) => b[1] - a[1]);
-
-    // 1. "All Packages" button
-    const allBtn = document.createElement('button');
-    allBtn.className = `pkg-tab ${state.activePackage === 'ALL' ? 'active' : ''}`;
-    allBtn.dataset.package = 'ALL';
-    allBtn.id = 'pkgTabAll';
-    allBtn.innerHTML = `All Packages <span class="pkg-tab-badge" id="pkgTabCountAll">${formatNumber(state.rawData.length)}</span>`;
-    allBtn.addEventListener('click', () => {
-      state.activePackage = 'ALL';
-      if (el.packageSelect) el.packageSelect.value = 'ALL';
-      updatePackageTabs();
-      applyFilters();
-    });
-    container.appendChild(allBtn);
-
-    // 2. Top packages by volume (top 15 packages in Z1F)
-    const topPkgs = sortedPkgs.slice(0, 15);
-    topPkgs.forEach(([pkgName, count]) => {
-      const btn = document.createElement('button');
-      btn.className = `pkg-tab ${state.activePackage === pkgName ? 'active' : ''}`;
-      btn.dataset.package = pkgName;
-      btn.innerHTML = `${escapeHtml(pkgName)} <span class="pkg-tab-badge">${formatNumber(count)}</span>`;
-      btn.addEventListener('click', () => {
-        state.activePackage = pkgName;
-        if (el.packageSelect) el.packageSelect.value = pkgName;
-        updatePackageTabs();
-        applyFilters();
-      });
-      container.appendChild(btn);
-    });
-  }
-
-  // Synchronize Package Tabs visual state with state.activePackage
-  function updatePackageTabs() {
-    const container = el.pkgTabsContainer || el.vendorPkgNav;
-    if (!container) return;
-    const tabs = container.querySelectorAll('.pkg-tab');
-    let matched = false;
-    tabs.forEach(tab => {
-      const isMatch = (tab.dataset.package === state.activePackage);
-      tab.classList.toggle('active', isMatch);
-      if (isMatch) matched = true;
-    });
-
-    // If activePackage is ALL, ensure ALL tab is active
-    if (state.activePackage === 'ALL') {
-      const allBtn = document.getElementById('pkgTabAll');
-      if (allBtn) allBtn.classList.add('active');
-    }
   }
 
   // Filter Data
@@ -1101,8 +1031,9 @@
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const projPrefix = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
-    link.setAttribute('download', `${projPrefix}_Vendor_Document_Log_${new Date().toISOString().slice(0, 10)}.csv`);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ASK_Vendor_Document_Log_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1126,7 +1057,16 @@
     el.themeToggleBtn.addEventListener('click', () => {
       state.theme = state.theme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', state.theme);
-      localStorage.setItem('z1f_vendor_theme', state.theme);
+      localStorage.setItem('ask_vendor_theme', state.theme);
+    });
+
+    // Package Nav Tabs
+    el.vendorPkgNav.querySelectorAll('.pkg-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        state.activePackage = tab.dataset.package;
+        updatePackageTabs();
+        applyFilters();
+      });
     });
 
     // Search input

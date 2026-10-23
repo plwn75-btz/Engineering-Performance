@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Z1F EDSR Workflow & Revision Lifecycle Dashboard - Design System
+   ASK MDR Workflow & Revision Lifecycle Dashboard - Design System
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -52,53 +52,6 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
 }
-
-/* Project Switcher Styling */
-.project-switcher-container {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  padding: 4px 6px;
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-sm);
-}
-.project-pill-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.project-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 16px;
-  border-radius: var(--radius-full);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.project-pill:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
-}
-.project-pill.active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
-}
-[data-theme="light"] .project-pill.active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-}
-.project-pill .proj-icon { font-size: 15px; }
-.project-pill .proj-label { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
 
 [data-theme="light"] {
   --bg-primary: #f8fafc;
@@ -256,12 +209,6 @@ body {
   gap: 16px;
 }
 
-@media (min-width: 1280px) {
-  .app-header {
-    flex-wrap: nowrap;
-  }
-}
-
 .brand-section {
   display: flex;
   align-items: center;
@@ -340,9 +287,6 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-left: auto;
-  justify-content: flex-end;
-  flex-wrap: wrap;
 }
 
 .action-btn {

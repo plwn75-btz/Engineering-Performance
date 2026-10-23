@@ -22,11 +22,3 @@ Thumbs.db
 *.log
 scratch/
 .tempmediaStorage/
-
-# Local backup and heavy archive folders (DO NOT COMMIT TO GITHUB)
-archive_ask/
-16102026/
-backup_z1f_standalone/
-data/
-
-

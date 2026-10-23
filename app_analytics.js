@@ -1,8 +1,8 @@
 /**
- * Z1F Analytic Evaluation: Rebaseline Plan vs. Actual Turnaround Controller
+ * ASK Analytic Evaluation: Rebaseline Plan vs. Actual Turnaround Controller
  * Manages forensic delay attribution, macro statement calculation,
- * interactive Chart.js visualizations, multi-attribute filtering across 4 Contractor Scopes,
- * drill-down timeline drawer, and CSV exports for Z1F Project.
+ * interactive Chart.js visualizations, multi-attribute filtering,
+ * drill-down timeline drawer, and CSV exports.
  */
 
 (function () {
@@ -23,7 +23,7 @@
     pageSize: 50,
     sortColumn: 'cycle_variance_wd',
     sortDirection: 'desc',
-    theme: localStorage.getItem('z1f_dash_theme') || 'dark',
+    theme: localStorage.getItem('ask_dash_theme') || 'dark',
     selectedItem: null,
     charts: {
       delayCauseChart: null,
@@ -82,13 +82,14 @@
     kpiContOverrunPct: document.getElementById('kpiContOverrunPct'),
     kpiWowOverrun: document.getElementById('kpiWowOverrun'),
 
-    // Contractor Scope Tabs
+    // Work Package Tabs
     wpTabsContainer: document.getElementById('wpTabsContainer'),
     tabCountAll: document.getElementById('tabCountAll'),
-    tabCountTopsideNoStr: document.getElementById('tabCountTopsideNoStr') || document.getElementById('tabCountWorley'),
-    tabCountJacket: document.getElementById('tabCountJacket'),
-    tabCountTopsideStr: document.getElementById('tabCountTopsideStr') || document.getElementById('tabCountTopsides'),
-    tabCountPipeline: document.getElementById('tabCountPipeline'),
+    tabCountWP01Top: document.getElementById('tabCountWP01Top'),
+    tabCountWP01Jkt: document.getElementById('tabCountWP01Jkt'),
+    tabCountWP02Top: document.getElementById('tabCountWP02Top'),
+    tabCountWP02Jkt: document.getElementById('tabCountWP02Jkt'),
+    tabCountProEng: document.getElementById('tabCountProEng'),
 
     // Filters
     searchInput: document.getElementById('searchInput'),
@@ -124,7 +125,7 @@
   function applyTheme(theme) {
     state.theme = theme;
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('z1f_dash_theme', theme);
+    localStorage.setItem('ask_dash_theme', theme);
 
     if (el.themeIcon) {
       if (theme === 'light') {
@@ -196,72 +197,31 @@
 
   // --- Update Scope Tab Counts ---
   function updateTabCounts() {
-    const container = document.getElementById('wpTabsContainer');
-    if (!container) return;
-
-    const isAsk = window.ZDocProjectManager && window.ZDocProjectManager.getActiveProject() === 'ASK';
-    const cfg = window.ZDocProjectManager ? window.ZDocProjectManager.getConfig() : null;
-
-    if (cfg) {
-      let html = '';
-      cfg.scopes.forEach(sc => {
-        let count = 0;
-        if (sc.id === 'ALL') {
-          count = state.allData.filter(d => d.has_actual && d.actual_cycle_wd !== null).length;
-        } else if (isAsk) {
-          count = state.allData.filter(d => d.has_actual && d.actual_cycle_wd !== null && (d.contractor === sc.id || d.work_package === sc.id)).length;
-        } else {
-          // Z1F matching
-          count = state.allData.filter(d => {
-            if (!d.has_actual || d.actual_cycle_wd === null) return false;
-            const wp = d.contractor || d.work_package || '';
-            if (sc.id === 'Topside without Structure') return wp.includes('without Structure') || wp.includes('Worley');
-            if (sc.id === 'Jacket & Piles') return wp.includes('Jacket');
-            if (sc.id === 'Topside Structure') return (wp.includes('Structure') && !wp.includes('without')) || wp === 'Topsides';
-            if (sc.id === 'WP2 Pipeline') return wp.includes('WP2') || wp.includes('Pipeline');
-            if (sc.id === 'Project Management & Ops') return wp.includes('Project Management') || wp.includes('Ops');
-            return false;
-          }).length;
+    const wpCounts = { 'ALL': 0, 'WP01 TOPSIDE': 0, 'WP01 JACKET': 0, 'WP02 TOPSIDE': 0, 'WP02 JACKET': 0, 'PRO.ENGINEERING_MR TBE': 0 };
+    state.allData.forEach(d => {
+      if (d.has_actual) {
+        wpCounts['ALL']++;
+        if (wpCounts[d.work_package] !== undefined) {
+          wpCounts[d.work_package]++;
         }
+      }
+    });
 
-        const isActive = (state.selectedWorkPackage === sc.id);
-        html += `
-          <button class="wp-tab ${isActive ? 'active' : ''}" data-wp="${sc.id}">
-            <span class="wp-name">${sc.label}</span>
-            <span class="wp-count">${count.toLocaleString()}</span>
-          </button>
-        `;
-      });
-      container.innerHTML = html;
-
-      // Re-bind click handlers
-      container.querySelectorAll('.wp-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          container.querySelectorAll('.wp-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          state.selectedWorkPackage = tab.getAttribute('data-wp');
-          applyFilters();
-        });
-      });
-    }
+    if (el.tabCountAll) el.tabCountAll.textContent = wpCounts['ALL'].toLocaleString();
+    if (el.tabCountWP01Top) el.tabCountWP01Top.textContent = wpCounts['WP01 TOPSIDE'].toLocaleString();
+    if (el.tabCountWP01Jkt) el.tabCountWP01Jkt.textContent = wpCounts['WP01 JACKET'].toLocaleString();
+    if (el.tabCountWP02Top) el.tabCountWP02Top.textContent = wpCounts['WP02 TOPSIDE'].toLocaleString();
+    if (el.tabCountWP02Jkt) el.tabCountWP02Jkt.textContent = wpCounts['WP02 JACKET'].toLocaleString();
+    if (el.tabCountProEng) el.tabCountProEng.textContent = wpCounts['PRO.ENGINEERING_MR TBE'].toLocaleString();
   }
 
   // --- Filtering Logic ---
   function applyFilters() {
     let result = state.allData.filter(d => d.has_actual && d.actual_cycle_wd !== null);
 
-    // 1. Contractor / Work Package
+    // 1. Work Package
     if (state.selectedWorkPackage !== 'ALL') {
-      result = result.filter(d => {
-        const wp = d.contractor || d.work_package || '';
-        if (state.selectedWorkPackage === 'Topside without Structure') {
-          return wp.includes('without Structure') || wp.includes('Worley');
-        }
-        if (state.selectedWorkPackage === 'Topside Structure') {
-          return (wp.includes('Structure') && !wp.includes('without')) || wp === 'Topsides';
-        }
-        return wp.includes(state.selectedWorkPackage) || state.selectedWorkPackage.includes(wp);
-      });
+      result = result.filter(d => d.work_package === state.selectedWorkPackage);
     }
 
     // 2. Transition Stage
@@ -583,7 +543,7 @@
             <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(item.rev_from || 'Start')} ➔ ${escapeHtml(item.rev_to || 'Target')}</div>
           </td>
           <td style="padding: 7px 5px; text-align: center; font-weight: 600;">
-            ${(item.plan_wd !== undefined && item.plan_wd !== null) ? item.plan_wd + ' WD' : ((item.plan_cycle_wd !== undefined && item.plan_cycle_wd !== null) ? item.plan_cycle_wd + ' WD' : '-')}
+            ${item.plan_wd !== null ? item.plan_wd + ' WD' : '-'}
             ${item.plan_feasibility === 'DEFECTIVE_IMPROPER' ? '<div style="font-size: 0.68rem; color: #c4b5fd;">&le; 10 WD Defective</div>' : ''}
           </td>
           <td style="padding: 7px 5px; text-align: center; font-weight: 600;">
@@ -1075,13 +1035,11 @@
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    const projPrefix = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
     link.href = url;
-    link.setAttribute('download', `${projPrefix}_Analytic_Evaluation_Report_${(window.ANALYTICS_REPORT_DATE || 'latest').replace(/\s+/g, '_')}.csv`);
+    link.setAttribute('download', `ASK_Analytic_Evaluation_Report_${(window.ANALYTICS_REPORT_DATE || 'latest').replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   }
 
   // --- Event Bindings ---
