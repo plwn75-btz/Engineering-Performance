@@ -31,10 +31,16 @@ def parse_date_obj(v):
         except: pass
     return None
 
-def process_ask_analytics(mdr_js_path="data/ask/mdr_data.js", output_dir="data/ask"):
-    if not os.path.exists(mdr_js_path):
-        import update_mdr_data_ask
-        update_mdr_data_ask.process_ask_mdr()
+def process_ask_analytics(mdr_js_path=None, output_dir="."):
+    if not mdr_js_path:
+        if os.path.exists("ask_mdr_data.js"):
+            mdr_js_path = "ask_mdr_data.js"
+        elif os.path.exists("data/ask/mdr_data.js"):
+            mdr_js_path = "data/ask/mdr_data.js"
+        else:
+            import update_mdr_data_ask
+            update_mdr_data_ask.process_ask_mdr()
+            mdr_js_path = "ask_mdr_data.js" if os.path.exists("ask_mdr_data.js") else "data/ask/mdr_data.js"
 
     print(f"Loading {mdr_js_path} for ASK Analytic Evaluation...")
     with open(mdr_js_path, "r", encoding="utf-8") as f:
@@ -253,15 +259,26 @@ def process_ask_analytics(mdr_js_path="data/ask/mdr_data.js", output_dir="data/a
     }
 
     report_date = "25-Sep-2026"
-    out_file = Path(output_dir) / "analytics_data.js"
-    with open(out_file, "w", encoding="utf-8") as f:
+    # Save directly to ask_analytics_data.js in main folder
+    out_main = Path("ask_analytics_data.js")
+    with open(out_main, "w", encoding="utf-8") as f:
         f.write(f'window.ANALYTICS_REPORT_DATE = "{report_date}";\n')
         f.write(f'window.ASK_ANALYTICS_REPORT_DATE = "{report_date}";\n')
         f.write('window.ANALYTICS_SUMMARY = ' + json.dumps(summary, indent=2) + ';\n')
         f.write('window.ANALYTICS_DATA = ' + json.dumps(transitions, ensure_ascii=False) + ';')
 
-    print(f"Successfully generated {out_file} with {len(transitions)} transitions (Report Date: {report_date}).")
+    # Also sync to output_dir/analytics_data.js if specified and different
+    if output_dir and output_dir != ".":
+        os.makedirs(output_dir, exist_ok=True)
+        with open(Path(output_dir) / "analytics_data.js", "w", encoding="utf-8") as f:
+            f.write(f'window.ANALYTICS_REPORT_DATE = "{report_date}";\n')
+            f.write(f'window.ASK_ANALYTICS_REPORT_DATE = "{report_date}";\n')
+            f.write('window.ANALYTICS_SUMMARY = ' + json.dumps(summary, indent=2) + ';\n')
+            f.write('window.ANALYTICS_DATA = ' + json.dumps(transitions, ensure_ascii=False) + ';')
+
+    print(f"Successfully generated {out_main} with {len(transitions)} transitions (Report Date: {report_date}).")
     return True
 
 if __name__ == '__main__':
     process_ask_analytics()
+

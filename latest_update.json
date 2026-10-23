@@ -40,10 +40,8 @@
       "status": "success"
     },
     "analytics": {
-      "status": "success",
-      "transitions": 3234,
-      "evaluated": 2299
+      "status": "success"
     }
   },
-  "updated_at": "2026-10-23T10:23:46.485103"
+  "updated_at": "2026-10-23T13:39:34.793599"
 }

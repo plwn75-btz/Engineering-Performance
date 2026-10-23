@@ -41,12 +41,13 @@ def extract_file_date_obj(filename):
         return date(year, month, day)
     return date.min
 
-def process_ask_vendor_file(excel_path=None, output_dir="data/ask"):
+def process_ask_vendor_file(excel_path=None, output_dir="."):
     if not excel_path:
-        files = glob.glob("archive_ask/*ASK Vendor Document Log Report*.xls*") + glob.glob("*ASK Vendor Document Log Report*.xls*")
+        # Search in main directory first, fallback to archive_ask
+        files = glob.glob("*ASK Vendor Document Log Report*.xls*") + glob.glob("archive_ask/*ASK Vendor Document Log Report*.xls*")
         valid = [f for f in files if not os.path.basename(f).startswith("~$")]
         if not valid:
-            print("Error: No ASK Vendor Document Log Report found.")
+            print("Error: No ASK Vendor Document Log Report found in main folder.")
             return False
         valid.sort(key=lambda x: extract_file_date_obj(os.path.basename(x)), reverse=True)
         excel_path = valid[0]
@@ -115,14 +116,22 @@ def process_ask_vendor_file(excel_path=None, output_dir="data/ask"):
     m = re.search(r'(\d{1,2})[-\s]([A-Za-z]{3})[-\s](\d{2,4})', os.path.basename(excel_path))
     report_date = f"{m.group(1).zfill(2)}-{m.group(2).capitalize()}-{m.group(3)}" if m else "25-Sep-2026"
 
-    os.makedirs(output_dir, exist_ok=True)
-    out_path = Path(output_dir) / "vendor_data.js"
-    with open(out_path, 'w', encoding='utf-8') as f:
+    # Save directly to ask_vendor_data.js in main folder
+    out_main = Path("ask_vendor_data.js")
+    with open(out_main, 'w', encoding='utf-8') as f:
         f.write(f'window.VENDOR_REPORT_DATE = "{report_date}";\n')
         f.write(f'window.ASK_VENDOR_REPORT_DATE = "{report_date}";\n')
         f.write('window.RAW_VENDOR_DATA = ' + json.dumps(records, ensure_ascii=False) + ';')
 
-    print(f"-> Generated {out_path} with {len(records)} records (Report Date: {report_date}).")
+    # Also sync to output_dir/vendor_data.js if specified and different
+    if output_dir and output_dir != ".":
+        os.makedirs(output_dir, exist_ok=True)
+        with open(Path(output_dir) / "vendor_data.js", 'w', encoding='utf-8') as f:
+            f.write(f'window.VENDOR_REPORT_DATE = "{report_date}";\n')
+            f.write(f'window.ASK_VENDOR_REPORT_DATE = "{report_date}";\n')
+            f.write('window.RAW_VENDOR_DATA = ' + json.dumps(records, ensure_ascii=False) + ';')
+
+    print(f"-> Generated {out_main} with {len(records)} records (Report Date: {report_date}).")
     return True
 
 if __name__ == '__main__':

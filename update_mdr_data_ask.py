@@ -56,21 +56,23 @@ def parse_date_val(val):
             pass
     return s
 
-def process_ask_mdr(mdr_path=None, log_path=None, output_dir="data/ask"):
+def process_ask_mdr(mdr_path=None, log_path=None, output_dir="."):
     if not mdr_path:
-        files = glob.glob("archive_ask/*MDR*.xlsx") + glob.glob("*MDR*.xlsx")
+        # Search in main directory first, fallback to archive_ask
+        files = glob.glob("*MM-ASK-1A-GEN01-ENG-MDR-0001*.xlsx") + glob.glob("*MDR*.xlsx") + glob.glob("archive_ask/*MDR*.xlsx")
         valid = [f for f in files if not os.path.basename(f).startswith("~$")]
         if not valid:
-            print("Error: No ASK MDR file found.")
+            print("Error: No ASK MDR file found in main folder.")
             return False
         valid.sort(key=lambda x: extract_file_date_obj(os.path.basename(x)), reverse=True)
         mdr_path = valid[0]
 
     if not log_path:
-        files = glob.glob("archive_ask/*ASK Technical Document Log Report*.xlsx") + glob.glob("*ASK Technical Document Log Report*.xlsx")
+        # Search in main directory first, fallback to archive_ask
+        files = glob.glob("*ASK Technical Document Log Report*.xlsx") + glob.glob("archive_ask/*ASK Technical Document Log Report*.xlsx")
         valid = [f for f in files if not os.path.basename(f).startswith("~$")]
         if not valid:
-            print("Error: No ASK Technical Log found.")
+            print("Error: No ASK Technical Log found in main folder.")
             return False
         valid.sort(key=lambda x: extract_file_date_obj(os.path.basename(x)), reverse=True)
         log_path = valid[0]
@@ -271,14 +273,22 @@ def process_ask_mdr(mdr_path=None, log_path=None, output_dir="data/ask"):
     m = re.search(r'(\d{1,2})[-\s]([A-Za-z]{3})[-\s](\d{2,4})', os.path.basename(mdr_path))
     report_date = f"{m.group(1).zfill(2)}-{m.group(2).capitalize()}-{m.group(3)}" if m else "25-Sep-2026"
 
-    os.makedirs(output_dir, exist_ok=True)
-    out_file = Path(output_dir) / 'mdr_data.js'
-    with open(out_file, 'w', encoding='utf-8') as f:
+    # Save directly to ask_mdr_data.js in main folder
+    out_main = Path('ask_mdr_data.js')
+    with open(out_main, 'w', encoding='utf-8') as f:
         f.write(f'window.MDR_REPORT_DATE = "{report_date}";\n')
         f.write(f'window.ASK_MDR_REPORT_DATE = "{report_date}";\n')
         f.write('window.MDR_DATA = ' + json.dumps(records, ensure_ascii=False) + ';')
 
-    print(f"Successfully generated {out_file} with {len(records)} ASK deliverables (Report Date: {report_date}).")
+    # Also sync to output_dir/mdr_data.js if specified and different
+    if output_dir and output_dir != ".":
+        os.makedirs(output_dir, exist_ok=True)
+        with open(Path(output_dir) / 'mdr_data.js', 'w', encoding='utf-8') as f:
+            f.write(f'window.MDR_REPORT_DATE = "{report_date}";\n')
+            f.write(f'window.ASK_MDR_REPORT_DATE = "{report_date}";\n')
+            f.write('window.MDR_DATA = ' + json.dumps(records, ensure_ascii=False) + ';')
+
+    print(f"Successfully generated {out_main} with {len(records)} ASK deliverables (Report Date: {report_date}).")
     return True
 
 if __name__ == '__main__':

@@ -120,16 +120,12 @@ When new weekly reports arrive from the 4 Contractors or Document Control:
 
 ---
 
-## 🛠️ File Structure
+## 🛠️ Optimized File Structure (Zero Subfolders Required)
+
+All required files are placed directly in the **root folder** for effortless GitHub upload and lightweight deployment:
 
 ```text
 ZDoc_Dashboard/
-├── archive_ask/                # Archived legacy ASK Excel cut-off files
-├── 16102026/                   # Z1F cut-off reference files (16-Oct-2026)
-├── backup_z1f_standalone/      # Standalone unmerged Z1F backup for safety
-├── data/                       # Isolated Multi-Project Datasets
-│   ├── z1f/                    # Z1F data.js, vendor_data.js, mdr_data.js, analytics_data.js
-│   └── ask/                    # ASK data.js, vendor_data.js, mdr_data.js, analytics_data.js
 ├── index.html                  # Dashboard 1: Technical Document Log (Z1F & ASK)
 ├── app.js                      # Logic for Dashboard 1 (Dynamic scope pills & Chart.js)
 ├── index_vendor.html           # Dashboard 2: Vendor Document Log (Z1F & ASK)
@@ -142,6 +138,24 @@ ZDoc_Dashboard/
 ├── styles.css                  # Core design tokens, high contrast theme
 ├── styles_mdr.css              # EDSR design tokens, lifecycle timeline, modals
 ├── styles_analytics.css        # Analytic evaluation layout, verdict banner, Chart.js
+│
+├── z1f_data.js                 # Z1F Technical Document Log dataset (flat root)
+├── z1f_vendor_data.js          # Z1F Vendor Document Log dataset (flat root)
+├── z1f_mdr_data.js             # Z1F 1,430 Active Deliverables dataset (flat root)
+├── z1f_analytics_data.js       # Z1F 2,689 Evaluated Transitions dataset (flat root)
+│
+├── ask_data.js                 # ASK Technical Document Log dataset (flat root)
+├── ask_vendor_data.js          # ASK Vendor Document Log dataset (flat root)
+├── ask_mdr_data.js             # ASK 1,330 Deliverables dataset (flat root)
+├── ask_analytics_data.js       # ASK 2,299 Evaluated Transitions dataset (flat root)
+│
+├── server.py                   # Production Flask server with /api/upload endpoint
+├── requirements.txt            # Python dependencies (flask, gunicorn, pandas, openpyxl, xlrd)
+├── Procfile                    # Render start command (web: gunicorn server:app)
+├── render.yaml                 # Render blueprint
+├── latest_update.json          # Audit metadata recording latest file sources & cut-off dates
+│
+├── update_all.py               # Batch master CLI engine with auto-discovery
 ├── update_data.py              # Parser for Z1F Technical Document Log
 ├── update_vendor_data.py       # Parser for Z1F Vendor Document Log
 ├── update_mdr_data.py          # Multi-EDSR parser merging 4 Z1F Contractor registers
@@ -150,14 +164,11 @@ ZDoc_Dashboard/
 ├── update_vendor_data_ask.py   # Parser for ASK Vendor Document Log
 ├── update_mdr_data_ask.py      # Parser for ASK MDR Register (corrected columns)
 ├── update_analytics_data_ask.py# Forensic delay attribution calculator for ASK
-├── update_all.py               # Batch master CLI engine with auto-discovery
-├── server.py                   # Production Flask server with /api/upload endpoint
-├── requirements.txt            # Python dependencies (flask, gunicorn, pandas, openpyxl, xlrd)
-├── latest_update.json          # Audit metadata recording latest file sources & cut-off dates
-├── spec.md                     # Comprehensive System Specification
+│
+├── README.md                   # System documentation & operating guide
 ├── hand_off_report.md          # Operations, deployment & hand-off manual
 ├── lesson_learn.md             # Technical challenges, edge cases & lessons learned
-└── README.md                   # System documentation & operating guide
+└── spec.md                     # Comprehensive System Specification
 ```
 
 ---

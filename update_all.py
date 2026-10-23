@@ -230,8 +230,18 @@ def update_all(target="all", base_dir="."):
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(overall, f, indent=2)
 
+    # Synchronize to flat root files (z1f_*.js and ask_*.js) for zero-subfolder GitHub deployment
+    import shutil
+    for fname in ["data.js", "vendor_data.js", "mdr_data.js", "analytics_data.js"]:
+        z1f_src = os.path.join(base_dir, "data", "z1f", fname)
+        ask_src = os.path.join(base_dir, "data", "ask", fname)
+        if os.path.exists(z1f_src):
+            shutil.copy2(z1f_src, os.path.join(base_dir, f"z1f_{fname}"))
+        if os.path.exists(ask_src):
+            shutil.copy2(ask_src, os.path.join(base_dir, f"ask_{fname}"))
+
     print("\n" + "=" * 75)
-    print("Batch data processing completed! Saved summary to latest_update.json.")
+    print("Batch data processing completed! Saved summary to latest_update.json and flat root datasets.")
     print("=" * 75)
     return overall
 
