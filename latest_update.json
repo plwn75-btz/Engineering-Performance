@@ -1,0 +1,49 @@
+{
+  "z1f": {
+    "technical": {
+      "file": "Z1F Technical Document Log Report - 16 Oct 26.xlsx",
+      "date": "16 Oct 26",
+      "status": "success"
+    },
+    "vendor": {
+      "file": "Z1F Vendor Document Log Report - 16 Oct 26.xls",
+      "date": "16 Oct 26",
+      "status": "success"
+    },
+    "mdr": {
+      "registers": [
+        "Jacket EDSR",
+        "Topside Structure EDSR",
+        "Topside without Structure (00210)",
+        "WP2 Pipeline Progress"
+      ],
+      "status": "success"
+    },
+    "analytics": {
+      "status": "success"
+    }
+  },
+  "ask": {
+    "technical": {
+      "file": "ASK Technical Document Log Report - 25 Sep 26.xlsx",
+      "date": "25 Sep 26",
+      "status": "success"
+    },
+    "vendor": {
+      "file": "ASK Vendor Document Log Report - 25 Sep 26.xls",
+      "date": "25 Sep 26",
+      "status": "success"
+    },
+    "mdr": {
+      "file": "MM-ASK-1A-GEN01-ENG-MDR-0001_B1- Cut off 25-Sep-26.xlsx",
+      "date": "25 Sep 26",
+      "status": "success"
+    },
+    "analytics": {
+      "status": "success",
+      "transitions": 3234,
+      "evaluated": 2299
+    }
+  },
+  "updated_at": "2026-10-23T10:23:46.485103"
+}

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Z1F Vendor Document Review Duration Dashboard | Contractor vs Client Tracking</title>
+  <meta name="description" content="Vendor Document review duration tracking dashboard for Z1F Project. Monitors vendor package submissions and Client review turnaround times in 10 working days.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Additional custom styling for Vendor Dashboard */
+    .vendor-pkg-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      backdrop-filter: blur(12px);
+    }
+    .vendor-pkg-nav::-webkit-scrollbar {
+      height: 4px;
+    }
+    .vendor-pkg-nav::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    .pkg-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .pkg-tab:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .pkg-tab.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.35);
+      font-weight: 600;
+    }
+    .pkg-tab-badge {
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+    .pkg-tab.active .pkg-tab-badge {
+      background: rgba(56, 189, 248, 0.25);
+      color: #bae6fd;
+    }
+
+    /* High-Contrast Light Theme Overrides */
+    [data-theme="light"] .vendor-pkg-nav {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    [data-theme="light"] .vendor-pkg-nav::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+    }
+    [data-theme="light"] .pkg-tab {
+      color: #334155;
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      font-weight: 600;
+    }
+    [data-theme="light"] .pkg-tab:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+    [data-theme="light"] .pkg-tab.active {
+      color: #ffffff !important;
+      background: #0284c7 !important;
+      border-color: #0284c7 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+    }
+    [data-theme="light"] .pkg-tab-badge {
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: 700;
+    }
+    [data-theme="light"] .pkg-tab.active .pkg-tab-badge {
+      background: rgba(255, 255, 255, 0.28) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Nav: Switch between dashboards -->
+    <nav class="hub-nav">
+      <div class="hub-nav-brand">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #0284c7; display: inline-block;"></span>
+        <span>Z1F and ASK Project Document Intelligence Hub</span>
+      </div>
+      <div class="hub-nav-links">
+        <a href="index.html" class="nav-tab-link">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Technical Log Dashboard
+        </a>
+        <a href="index_vendor.html" class="nav-tab-link active-vendor">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+          Vendor Document Log Dashboard
+        </a>
+        <a href="index_mdr.html" class="nav-tab-link">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+          MDR Revision Lifecycle Dashboard
+        </a>
+        <a href="index_analytics.html" class="nav-tab-link">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Analytic Evaluation (Rebaseline vs Actual)
+        </a>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo" style="background: linear-gradient(135deg, #0284c7, #38bdf8);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1><span id="projectHeaderTitlePrefix">Z1F</span> Vendor Document Review Duration Dashboard</h1>
+          <div class="brand-subtitle">
+            <span class="badge-tag" id="headerReportDate">Report Date: 16-Oct-2026</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Project Switcher Pill Group (Z1F vs ASK) -->
+        <div id="projectSwitcher" class="project-switcher-container"></div>
+        <button id="openSlaDefBtn" class="btn-sla-info" title="What is SLA? Service Level Agreement Definition">
+          ℹ️ What is SLA?
+        </button>
+        <button id="openUploadBtn" class="btn-upload-nav" title="Upload New Weekly Cut-Off Excel File">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload New File
+        </button>
+        <button id="exportCsvBtn" class="btn btn-secondary" title="Export filtered vendor documents to CSV">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
+        <button id="resetFiltersBtn" class="btn btn-secondary" title="Reset all applied filters">
+          Reset Filters
+        </button>
+        <button id="themeToggleBtn" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Vendor Package Quick Navigation Bar (Populated dynamically by app_vendor.js) -->
+    <nav class="vendor-pkg-nav" id="vendorPkgNav" aria-label="Vendor Package Filter">
+      <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-muted); padding-right:6px; border-right:1px solid var(--border-color);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Package:
+      </div>
+      <div id="pkgTabsContainer" style="display:inline-flex; align-items:center; gap:8px;">
+        <button class="pkg-tab active" data-package="ALL" id="pkgTabAll">
+          All Packages <span class="pkg-tab-badge" id="pkgTabCountAll">535</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Filter Bar -->
+    <section class="filter-bar" aria-label="Dashboard Filters">
+      <div class="filter-row">
+        <!-- Search Input -->
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search Document No, Title, Submittal ID, Package...">
+        </div>
+
+        <!-- Discipline Select -->
+        <select id="disciplineSelect" class="select-filter" aria-label="Filter by Discipline">
+          <option value="ALL">All Disciplines</option>
+        </select>
+
+        <!-- Package Select -->
+        <select id="packageSelect" class="select-filter" aria-label="Filter by Vendor Package">
+          <option value="ALL">All Vendor Packages</option>
+        </select>
+
+        <!-- Revision Select -->
+        <select id="revSelect" class="select-filter" aria-label="Filter by Revision">
+          <option value="ALL">All Revisions</option>
+        </select>
+
+        <!-- Return Status Select -->
+        <select id="statusSelect" class="select-filter" aria-label="Filter by Return Status">
+          <option value="ALL">All Return Statuses</option>
+        </select>
+      </div>
+
+      <!-- Quick Category Pills -->
+      <div class="filter-row">
+        <div class="category-pills" id="categoryPills">
+          <button class="pill-btn active" data-category="ALL">
+            All Submissions <span class="pill-count" id="countAll">535</span>
+          </button>
+          <button class="pill-btn pill-within" data-category="<= 10 Days">
+            <span style="color:#10b981;">●</span> Within 10 Working Days (&le; 10 WD) <span class="pill-count" id="countWithin">324</span>
+          </button>
+          <button class="pill-btn pill-over" data-category="> 10 Days">
+            <span style="color:#f43f5e;">●</span> Over 10 Working Days (> 10 WD) <span class="pill-count" id="countOver">71</span>
+          </button>
+          <button class="pill-btn pill-pending" data-category="Pending">
+            <span style="color:#f59e0b;">●</span> Pending Review <span class="pill-count" id="countPending">140</span>
+          </button>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);" id="filterStatusText">
+          Showing 535 submissions
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Metric Cards Grid -->
+    <section class="kpi-grid" aria-label="Key Performance Indicators">
+      <!-- Total Submissions -->
+      <div class="kpi-card" style="--card-accent: #0284c7;">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Vendor Submissions</span>
+          <div class="kpi-icon-wrap" style="background: rgba(2, 132, 199, 0.15); color: #38bdf8;">
+            📦
+          </div>
+        </div>
+        <div class="kpi-value" id="kpiTotal">535</div>
+        <div class="kpi-meta">
+          <span>Unique Documents: <strong id="kpiUniqueDocs">454</strong></span>
+          <span class="badge-tag">100%</span>
+        </div>
+      </div>
+
+      <!-- Within 10 Working Days (Meet Agreement) -->
+      <div class="kpi-card" style="--card-accent: #10b981;">
+        <div class="kpi-header">
+          <span class="kpi-title">Within 10 Working Days</span>
+          <div class="kpi-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+            ✓
+          </div>
+        </div>
+        <div class="kpi-value" style="color: #10b981;" id="kpiWithin10">324</div>
+        <div class="kpi-meta">
+          <span>Meet Agreement: <strong id="kpiWithinPct">82.0%</strong> of completed</span>
+          <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Target Met</span>
+        </div>
+      </div>
+
+      <!-- Over 10 Working Days (Over Agreement) -->
+      <div class="kpi-card" style="--card-accent: #f43f5e;">
+        <div class="kpi-header">
+          <span class="kpi-title">Over 10 Working Days</span>
+          <div class="kpi-icon-wrap" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">
+            ⚠
+          </div>
+        </div>
+        <div class="kpi-value" style="color: #f43f5e;" id="kpiOver10">71</div>
+        <div class="kpi-meta">
+          <span>Over Agreement: <strong id="kpiOverPct">18.0%</strong> of completed</span>
+          <span class="badge-tag" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">Exceeded</span>
+        </div>
+      </div>
+
+      <!-- Pending Client Review -->
+      <div class="kpi-card" style="--card-accent: #f59e0b;">
+        <div class="kpi-header">
+          <span class="kpi-title">Pending Client Review</span>
+          <div class="kpi-icon-wrap" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+            ⏳
+          </div>
+        </div>
+        <div class="kpi-value" style="color: #f59e0b;" id="kpiPending">140</div>
+        <div class="kpi-meta">
+          <span>Awaiting Out Date: <strong id="kpiPendingPct">26.2%</strong></span>
+          <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Active</span>
+        </div>
+      </div>
+
+      <!-- Average Review Duration -->
+      <div class="kpi-card" style="--card-accent: #38bdf8;">
+        <div class="kpi-header">
+          <span class="kpi-title">Avg Review Duration</span>
+          <div class="kpi-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+            ⏱
+          </div>
+        </div>
+        <div class="kpi-value" id="kpiAvgDuration">7.8 <span style="font-size:16px; font-weight:500; color:var(--text-secondary);">WD</span></div>
+        <div class="kpi-meta">
+          <span>Contractual Benchmark: <strong>&le; 10 WD</strong></span>
+          <a href="javascript:void(0)" id="slaBadgeBtn" class="sla-badge-interactive" title="Click to view full Service Level Agreement (SLA) Definition">
+            Within Agreement (SLA &le; 10 WD) ℹ️
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visual Charts Grid -->
+    <section class="charts-grid" aria-label="Visual Data Analytics">
+      <!-- Donut Chart: Agreement Compliance -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Client Review Agreement Compliance</h2>
+            <p class="chart-desc">Breakdown of returned vendor reviews against 10 working days contractual SLA</p>
+          </div>
+        </div>
+        <div id="donutChartContainer" class="chart-body" style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Duration Distribution Tiers Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Review Duration Distribution Tiers</h2>
+            <p class="chart-desc">Deliverables grouped by working day turnaround ranges (Click any tier bar to view details)</p>
+          </div>
+          <!-- Active Tier Filter Badge -->
+          <div id="activeTierBadge" class="active-tier-tag" style="display: none;">
+            <span id="activeTierLabel">Tier</span>
+            <button id="clearTierFilterBtn" class="tier-clear-btn" title="Clear tier filter">&times;</button>
+          </div>
+        </div>
+        <div id="tierChartContainer" class="chart-body" style="min-height: 280px;">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Vendor Package & Discipline Performance -->
+    <section class="charts-grid" aria-label="Package Performance Analytics">
+      <!-- Vendor Package Breakdown -->
+      <div class="chart-card" style="grid-column: 1 / -1;">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Vendor Package Review Turnaround & Agreement Rate</h2>
+            <p class="chart-desc">Completed reviews, average duration, and agreement percentage by vendor equipment package</p>
+          </div>
+        </div>
+        <div id="packageChartContainer" class="chart-body" style="min-height: 280px; overflow-x: auto;">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Document Data Table -->
+    <section class="table-card" aria-label="Document Deliverables Table">
+      <div class="table-header-row">
+        <div>
+          <h2 class="table-title">Vendor Document Log Registry</h2>
+          <span class="table-record-info" id="tableRecordCountText">Showing 1-25 of 188 records</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label style="font-size: 13px; color: var(--text-secondary);" for="pageSizeSelect">Show:</label>
+          <select id="pageSizeSelect" class="select-filter" style="width: auto; padding: 6px 10px;">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="ALL">All</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table" id="mainDocTable">
+          <thead>
+            <tr>
+              <th data-sort="submittal_id" style="width: 110px;">Submittal ID</th>
+              <th data-sort="doc_no" style="min-width: 220px;">Document No.</th>
+              <th data-sort="doc_title" style="min-width: 260px;">Document Title</th>
+              <th data-sort="rev" style="width: 60px;">Rev</th>
+              <th data-sort="vendor_package_name" style="min-width: 170px;">Vendor Package</th>
+              <th data-sort="discipline_name" style="width: 130px;">Discipline</th>
+              <th data-sort="actual_submit_in" style="width: 120px;">Submit In</th>
+              <th data-sort="actual_submit_out" style="width: 120px;">Submit Out</th>
+              <th data-sort="duration_days" style="width: 120px;">Duration (WD)</th>
+              <th data-sort="return_status_name" style="width: 160px;">Return Status</th>
+              <th data-sort="category" style="width: 150px;">Agreement Status</th>
+              <th style="width: 70px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-bar">
+        <div id="paginationInfo" class="pagination-info">Page 1 of 8</div>
+        <div id="paginationControls" class="pagination-controls">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Deliverable Revision History Drawer -->
+    <div id="drawerBackdrop" class="drawer-backdrop"></div>
+    <aside id="historyDrawer" class="drawer" aria-label="Document Detail Drawer">
+      <div class="drawer-header">
+        <div>
+          <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; margin-bottom: 6px;">Vendor Document Detail</span>
+          <h3 id="drawerDocNo" style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; word-break: break-all;">-</h3>
+          <p id="drawerDocTitle" style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">-</p>
+        </div>
+        <button id="drawerCloseBtn" class="btn-icon" aria-label="Close Drawer">&times;</button>
+      </div>
+      <div class="drawer-meta-bar">
+        <div>
+          <span style="font-size: 11px; color: var(--text-muted); display: block;">PACKAGE</span>
+          <strong id="drawerPackage" style="font-size: 12px; color: var(--text-primary);">-</strong>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-muted); display: block;">DISCIPLINE</span>
+          <strong id="drawerDiscipline" style="font-size: 12px; color: var(--text-primary);">-</strong>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-muted); display: block;">SUBMISSIONS</span>
+          <strong id="drawerRevCount" style="font-size: 12px; color: var(--text-primary);">-</strong>
+        </div>
+      </div>
+      <div class="drawer-body">
+        <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px;">Transmittal Submission & Review Timeline</h4>
+        <div id="drawerTimeline" class="timeline-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Tier Detail Modal (Drill-down for Duration Tiers) -->
+    <div id="tierModalBackdrop" class="tier-modal-backdrop">
+      <div class="tier-modal" role="dialog" aria-modal="true">
+        <div class="tier-modal-header">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="tierModalBadge" style="width: 14px; height: 14px; border-radius: 4px; background: #38bdf8;"></div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 id="tierModalTitle" style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Tier Deliverables</h3>
+                <span id="tierModalCountBadge" class="tab-badge" style="font-size: 12px; padding: 2px 8px;">0 Documents</span>
+              </div>
+              <p id="tierModalSubtitle" style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">Breakdown by Discipline and Document Registry</p>
+            </div>
+          </div>
+          <button id="tierModalCloseBtn" class="btn-icon" aria-label="Close Modal">&times;</button>
+        </div>
+
+        <div style="padding: 14px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div id="tierDisciplineChips" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <!-- Rendered by JS -->
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="text" id="tierDocSearchInput" class="search-input" style="padding: 6px 12px; font-size: 12px; width: 220px;" placeholder="Search within this tier...">
+            <button id="btnFilterMainByTier" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">Apply Filter to Main Table</button>
+          </div>
+        </div>
+
+        <div class="tier-modal-body">
+          <table class="data-table" style="font-size: 12px;">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Submittal ID</th>
+                <th style="min-width: 200px;">Document No.</th>
+                <th style="min-width: 240px;">Title</th>
+                <th style="width: 50px;">Rev</th>
+                <th style="width: 140px;">Vendor Package</th>
+                <th style="width: 110px;">Discipline</th>
+                <th style="width: 100px;">Submit In</th>
+                <th style="width: 100px;">Submit Out</th>
+                <th style="width: 100px; text-align: right;">Review (WD)</th>
+                <th style="width: 130px;">Return Status</th>
+              </tr>
+            </thead>
+            <tbody id="tierDocTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLA Definition Modal -->
+    <div id="slaModalBackdrop" class="tier-modal-backdrop">
+      <div class="tier-modal" style="max-width: 680px;" role="dialog" aria-modal="true">
+        <div class="tier-modal-header" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(56, 189, 248, 0.08));">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+              ℹ️
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Service Level Agreement (SLA) Definition</h3>
+              <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">Z1F Project Procedural Engineering Turnaround Standards</p>
+            </div>
+          </div>
+          <button id="slaModalCloseBtn" class="btn-icon" aria-label="Close Modal">&times;</button>
+        </div>
+        <div class="tier-modal-body" style="padding: 24px; line-height: 1.6; font-size: 13px; color: var(--text-secondary);">
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 6px 0; color: #34d399; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+              <span>🎯</span> Contractual Baseline: 10 Working Days
+            </h4>
+            <p style="margin: 0; color: var(--text-primary);">
+              <strong>SLA</strong> stands for <strong>Service Level Agreement</strong>. In the Z1F Field Development Project, the SLA defines the maximum contractual turnaround period allowed for the <strong>Client Engineering Team</strong> to review and officially return submitted technical &amp; vendor deliverables.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+              <strong style="color: #10b981; display: block; margin-bottom: 4px;">✓ Meet Agreement (&le; 10 WD)</strong>
+              <span>Review completed and officially returned with status code (APPR, AWC, etc.) within <strong>10 working days</strong> (Mon&ndash;Fri, excluding weekends).</span>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+              <strong style="color: #f43f5e; display: block; margin-bottom: 4px;">⚠ Over Agreement (> 10 WD)</strong>
+              <span>Review elapsed time exceeds 10 working days, triggering overdue tracking and potential schedule delay claim liabilities.</span>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 6px;">How Working Days are Counted:</strong>
+            <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: var(--text-secondary);">
+              <li><strong>Starts</strong>: The first business day following official receipt date (<code>Actual Submit In</code>).</li>
+              <li><strong>Counted</strong>: Monday through Friday only. Saturdays and Sundays are excluded.</li>
+              <li><strong>Ends</strong>: The date the review status is officially issued out (<code>Actual Submit Out</code>).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload New Cut-Off Report Modal -->
+    <div id="uploadModalBackdrop" class="tier-modal-backdrop">
+      <div class="tier-modal" style="max-width: 640px;" role="dialog" aria-modal="true">
+        <div class="tier-modal-header" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.08));">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+              📁
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Upload New Weekly Cut-Off Report</h3>
+              <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">Auto-detects and updates dashboard with latest Excel data</p>
+            </div>
+          </div>
+          <button id="uploadModalCloseBtn" class="btn-icon" aria-label="Close Modal">&times;</button>
+        </div>
+        <div class="tier-modal-body" style="padding: 24px;">
+          <div id="uploadDropzone" class="upload-dropzone">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" style="margin-bottom: 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <h4 style="margin: 0 0 6px 0; font-size: 15px; color: var(--text-primary);">Drag &amp; Drop your new Excel Report here</h4>
+            <p style="margin: 0 0 16px 0; font-size: 12px; color: var(--text-secondary);">
+              Supports Technical Log (<code>.xlsx</code>), Vendor Log (<code>.xls/.xlsx</code>), or EDSR Registers (<code>.xlsx/.xlsm</code>)
+            </p>
+            <input type="file" id="fileUploadInput" accept=".xlsx,.xls" style="display: none;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileUploadInput').click()">
+              Browse Files...
+            </button>
+          </div>
+
+          <div id="uploadStatusBox" style="display: none; margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 13px;">
+            <!-- Dynamic feedback -->
+          </div>
+
+          <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted); line-height: 1.5; border-top: 1px solid var(--border-color); padding-top: 14px;">
+            💡 <strong>Automatic Date Detection:</strong> Weekly filenames with changing dates (e.g. <code>Z1F Technical Document Log Report - 16 Oct 26.xlsx</code> or <code>Z1F Vendor Document Log Report - 16 Oct 26.xls</code>) are automatically parsed, recalculated with 10 working days criteria, and reflected immediately on this dashboard.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
+      <div>
+        <strong>Z1F and ASK Project Intelligence Hub</strong> &bull; Vendor Document Review Tracking
+      </div>
+      <div>
+        Standard SLA: <strong>10 Working Days (Mon&ndash;Fri)</strong>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Project Manager & Multi-Project Dataset Bootstrapper -->
+  <script src="project_manager.js"></script>
+  <script>
+    (function() {
+      var proj = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
+      var src = (proj === 'ASK') ? 'data/ask/vendor_data.js' : 'data/z1f/vendor_data.js';
+      document.write('<script src="' + src + '"><\/script>');
+    })();
+  </script>
+  <!-- Application Script -->
+  <script src="app_vendor.js"></script>
+</body>
+</html>

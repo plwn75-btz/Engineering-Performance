@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Z1F Document Intelligence Hub - Analytic Evaluation (Rebaseline vs Actual)</title>
+  <meta name="description" content="Forensic evaluation of Contractor REBASELINE PLAN vs Actual Revision Cycle Turnaround: Root Cause Delay Attribution across Improper Planning, Contractor Incorporation, and Client Review SLA for Z1F Project.">
+  <link rel="stylesheet" href="styles_analytics.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Top Nav: Switch between dashboards -->
+    <nav class="dashboard-switcher" id="dashboardSwitcher">
+      <div class="switcher-brand">
+        <span class="pulse-dot"></span>
+        <span class="switcher-label">Z1F and ASK Project Document Intelligence Hub</span>
+      </div>
+      <div class="switcher-links">
+        <a href="index.html" class="switch-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Technical Log Dashboard
+        </a>
+        <a href="index_vendor.html" class="switch-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+          Vendor Document Log Dashboard
+        </a>
+        <a href="index_mdr.html" class="switch-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+          EDSR Revision Lifecycle Dashboard
+        </a>
+        <a href="index_analytics.html" class="switch-btn active">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Analytic Evaluation (Rebaseline vs Actual)
+        </a>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <div class="title-row">
+            <h1><span id="projectHeaderTitlePrefix">Z1F</span> Analytic Evaluation: Rebaseline Plan vs. Actual Turnaround</h1>
+            <span class="badge-tag live-badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99, 102, 241, 0.4);">FORENSIC ENGINE</span>
+          </div>
+          <div class="brand-subtitle">
+            <span>Contractor Rebaseline Plan Verification &bull; <span id="headerReportDate">Cut-off 16-Oct-26</span></span>
+            <span class="separator">&bull;</span>
+            <span id="headerTotalBadge" class="doc-count-pill">4,154 Evaluated Transitions</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Project Switcher Pill Group (Z1F vs ASK) -->
+        <div id="projectSwitcher" class="project-switcher-container"></div>
+        <button class="action-btn" id="openSlaDefBtn" title="View SLA, Incorporation Rights & Forensic Methodology">
+          ℹ️ What is SLA & Criteria?
+        </button>
+        <button class="action-btn" id="openUploadBtn" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);" title="Upload latest weekly Excel report">
+          📁 Upload New File
+        </button>
+        <button class="action-btn" id="exportAnalyticsCsvBtn" title="Export Evaluated Transitions to CSV">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
+        <button class="action-btn primary" id="refreshBtn" title="Reset all filters">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Reset Filters
+        </button>
+        <button id="themeToggleBtn" class="action-btn theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle Theme" style="padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; min-width: 40px;">
+          <span id="themeIcon" style="display: flex; align-items: center; justify-content: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Executive Statement of Conclusion & Macro Justification Banner -->
+    <section class="analytics-verdict-banner">
+      <div class="verdict-header">
+        <div class="verdict-title-area">
+          <div class="verdict-icon">⚖️</div>
+          <div>
+            <div class="verdict-title">Executive Forensic Statement of Conclusion & Macro Evaluation</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Contractual Verification of REBASELINE PLAN across IFR, IFA, AFC, and AP revisions</div>
+          </div>
+        </div>
+        <div id="macroVerdictBadge" class="verdict-badge overrun-alert">
+          ⚠️ Contractor Overrun: 59.7% of Delays (> 50% Threshold)
+        </div>
+      </div>
+
+      <div class="verdict-content" id="macroStatementText">
+        Forensic delay attribution across <strong>2,639 revision transitions</strong> reveals that <strong>495 out of 829 delayed transitions (59.7%)</strong> are driven by Contractor comment incorporation exceeding planned allowances. Because this exceeds the contractual <strong>50% threshold</strong>, it provides conclusive analytical justification that the Contractor's Rebaseline Plan was <strong>systematically over-optimistic and improperly planned</strong> relative to their actual engineering capacity.
+      </div>
+
+      <!-- Week-over-Week Trend Statement (Red Arrow Location) -->
+      <div class="wow-trend-statement" id="wowTrendStatement">
+        <span class="wow-tag">📈 Week-over-Week Trend:</span>
+        <span id="wowTrendText">Comparing against previous weekly cut-off...</span>
+      </div>
+
+      <!-- 3 Core Questions Answers Grid -->
+      <div class="questions-answers-grid">
+        <div class="qa-card">
+          <div class="qa-header">
+            <span>Question 1</span>
+            <span>&bull; Plan Quality</span>
+          </div>
+          <div class="qa-question">Is the Plan Realistic / Effective?</div>
+          <div class="qa-answer" id="qa1Answer">
+            <strong>183 transitions (22.1% of delays)</strong> were structurally defective (&le; 10 WD allowance, leaving 0 days for incorporation). Combined with 59.7% Contractor execution overrun, the Rebaseline Plan was systematically unachievable.
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-header">
+            <span>Question 2</span>
+            <span>&bull; Plan Execution</span>
+          </div>
+          <div class="qa-question">Does Actual Duration Meet Plan?</div>
+          <div class="qa-answer" id="qa2Answer">
+            <strong>68.6% (1,810 transitions)</strong> successfully met or beat the Rebaseline Plan. However, <strong>31.4% (829 transitions)</strong> incurred significant overdue schedule variance averaging +14.9 working days.
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-header">
+            <span>Question 3</span>
+            <span>&bull; Delay Cause Breakdown</span>
+          </div>
+          <div class="qa-question">What is the Primary Delay Driver?</div>
+          <div class="qa-answer" id="qa3Answer">
+            <strong>Late Contractor Incorp (39.0%)</strong> is the #1 driver, followed by <strong>Improper Plan (22.1%)</strong>, <strong>Compound Delay (20.7%)</strong>, and <strong>Late Client Review (18.2%)</strong>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Summary Grid (6 Cards) -->
+    <section class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px;">
+      
+      <div class="kpi-card">
+        <div class="kpi-title">EVALUATED TRANSITIONS</div>
+        <div class="kpi-value" id="kpiTotalEval">2,639</div>
+        <div class="kpi-subtext"><span id="kpiScopeTag">All Work Packages</span> &bull; 5,147 Total</div>
+        <div class="kpi-wow-note" id="kpiWowTotal">Prev: -</div>
+      </div>
+
+      <div class="kpi-card" style="border-left: 4px solid var(--color-within10);">
+        <div class="kpi-title">MET REBASELINE PLAN</div>
+        <div class="kpi-value" id="kpiMetPlanCount" style="color: var(--color-within10);">1,810</div>
+        <div class="kpi-subtext"><span id="kpiMetPlanRate" style="font-weight: 700; color: var(--color-within10);">68.6%</span> On Track / Ahead</div>
+        <div class="kpi-wow-note" id="kpiWowMet">Prev: -</div>
+      </div>
+
+      <div class="kpi-card" style="border-left: 4px solid var(--color-over10);">
+        <div class="kpi-title">OVERDUE / DELAYED</div>
+        <div class="kpi-value" id="kpiOverdueCount" style="color: var(--color-over10);">829</div>
+        <div class="kpi-subtext"><span id="kpiOverdueRate" style="font-weight: 700; color: var(--color-over10);">31.4%</span> Over Plan Cycle</div>
+        <div class="kpi-wow-note" id="kpiWowOverdue">Prev: -</div>
+      </div>
+
+      <div class="kpi-card" style="border-left: 4px solid #0284c7;">
+        <div class="kpi-title">CLIENT REVIEW SLA</div>
+        <div class="kpi-value" id="kpiClientSlaRate" style="color: #38bdf8;">58.9%</div>
+        <div class="kpi-subtext">Avg Review: <span id="kpiAvgClientWd" style="font-weight: 700;">10.0 WD</span> (&le; 10 WD SLA)</div>
+        <div class="kpi-wow-note" id="kpiWowClient">Prev: -</div>
+      </div>
+
+      <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
+        <div class="kpi-title">CONT. INCORPORATION</div>
+        <div class="kpi-value" id="kpiAvgContIncWd" style="color: #fbbf24;">14.9 WD</div>
+        <div class="kpi-subtext">Planned Allowance: <span id="kpiAvgPlanIncWd">14.2 WD</span></div>
+        <div class="kpi-wow-note" id="kpiWowIncorp">Prev: -</div>
+      </div>
+
+      <div class="kpi-card" style="border-left: 4px solid #8b5cf6;">
+        <div class="kpi-title">CONTRACTOR OVERRUN</div>
+        <div class="kpi-value" id="kpiContOverrunPct" style="color: #c4b5fd;">59.7%</div>
+        <div class="kpi-subtext"><span style="color: #f43f5e; font-weight: 700;">&gt; 50%</span> Confirms Improper Plan</div>
+        <div class="kpi-wow-note" id="kpiWowOverrun">Prev: -</div>
+      </div>
+
+    </section>
+
+    <!-- Visual Analytics & Charts Section -->
+    <section class="charts-section">
+      
+      <!-- Chart 1: Delay Cause Attribution Donut -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            <span>Root Cause Delay Attribution</span>
+            <span class="info-pill" id="chartAttributionCount">829 Delays</span>
+          </div>
+          <div class="chart-subtitle">Decomposition of Overdue Transitions into Contractual Parameters</div>
+        </div>
+        <div class="chart-body" style="height: 280px; position: relative;">
+          <canvas id="delayCauseChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Discipline Delay Breakdown -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            <span>Delay Attribution by Engineering Discipline</span>
+            <span class="info-pill">Top Disciplines</span>
+          </div>
+          <div class="chart-subtitle">Contractor vs. Client vs. Improper Plan Overrun per Discipline</div>
+        </div>
+        <div class="chart-body" style="height: 280px; position: relative;">
+          <canvas id="disciplineDelayChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Transition Stage Performance -->
+      <div class="chart-card" style="grid-column: 1 / -1;">
+        <div class="chart-header">
+          <div class="chart-title">
+            <span>Revision Transition Stage Performance (IFR ➔ IFA ➔ AFC ➔ AP)</span>
+            <span class="info-pill">4 Lifecycle Corridors</span>
+          </div>
+          <div class="chart-subtitle">Met Plan vs. Delay Root Cause Distribution Across Each Revision Corridor</div>
+        </div>
+        <div class="chart-body" style="height: 260px; position: relative;">
+          <canvas id="transitionStageChart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Contractor Scope Selector -->
+    <section class="wp-tabs-section">
+      <div class="section-label">SELECT CONTRACTOR SCOPE:</div>
+      <div class="wp-tabs" id="wpTabsContainer">
+        <button class="wp-tab active" data-wp="ALL">
+          <span class="wp-name">All Contractors</span>
+          <span class="wp-count" id="tabCountAll">4,290</span>
+        </button>
+        <button class="wp-tab" data-wp="Topside without Structure">
+          <span class="wp-name">Topside without Structure</span>
+          <span class="wp-count" id="tabCountTopsideNoStr">-</span>
+        </button>
+        <button class="wp-tab" data-wp="Jacket & Piles">
+          <span class="wp-name">Jacket &amp; Piles</span>
+          <span class="wp-count" id="tabCountJacket">-</span>
+        </button>
+        <button class="wp-tab" data-wp="Topside Structure">
+          <span class="wp-name">Topside Structure</span>
+          <span class="wp-count" id="tabCountTopsideStr">-</span>
+        </button>
+        <button class="wp-tab" data-wp="WP2 Pipeline">
+          <span class="wp-name">WP2 Pipeline</span>
+          <span class="wp-count" id="tabCountPipeline">-</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Filter Control Bar -->
+    <section class="filter-controls-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; margin-bottom: 24px;">
+      
+      <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
+        
+        <!-- Live Search -->
+        <div class="filter-group" style="position: relative;">
+          <label class="filter-label">SEARCH DOCUMENT / TITLE</label>
+          <input type="text" id="searchInput" class="search-input" placeholder="Doc No, Title, Submittal ID..." style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+          <button id="clearSearchBtn" class="clear-btn" style="position: absolute; right: 8px; top: 28px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none;">&times;</button>
+        </div>
+
+        <!-- Transition Stage Filter -->
+        <div class="filter-group">
+          <label class="filter-label">TRANSITION STAGE</label>
+          <select id="transitionSelect" class="filter-select" style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="ALL" selected>All Revision Transitions</option>
+            <option value="IFR -> IFA">IFR ➔ IFA (Stage 1 to 2)</option>
+            <option value="IFA -> AFC">IFA ➔ AFC (Stage 2 to 3)</option>
+            <option value="IFR -> AFC (Fast-Track)">IFR ➔ AFC (Fast-Track Corridor)</option>
+            <option value="AFC -> AP">AFC ➔ AP (Client Closeout)</option>
+          </select>
+        </div>
+
+        <!-- Delay Cause Filter -->
+        <div class="filter-group">
+          <label class="filter-label">DELAY ROOT CAUSE</label>
+          <select id="causeSelect" class="filter-select" style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="ALL">All Attribution Categories</option>
+            <option value="MET_PLAN">✅ Met Rebaseline Plan</option>
+            <option value="IMPROPER_PLAN">🟣 (1) Improperly Planned</option>
+            <option value="LATE_CONTRACTOR">🟡 (2) Late Contractor Incorp</option>
+            <option value="LATE_CLIENT">🔵 (3) Late Client Review (> 10 WD)</option>
+            <option value="COMPOUND_DELAY">🔴 (4) Compound Delay (Client + Cont.)</option>
+          </select>
+        </div>
+
+        <!-- Discipline Filter -->
+        <div class="filter-group">
+          <label class="filter-label">DISCIPLINE</label>
+          <select id="disciplineSelect" class="filter-select" style="width: 100%; padding: 9px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="ALL">All Disciplines</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Quick Filter Chips Row -->
+      <div class="quick-chips-row" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Filters:</span>
+        <button class="quick-chip active" data-chip="ALL">Show All</button>
+        <button class="quick-chip" data-chip="OVERDUE_ONLY">⚠️ All Overdue Only</button>
+        <button class="quick-chip" data-chip="CONT_OVERRUN">🟡 Contractor Overrun (&gt; Allowance)</button>
+        <button class="quick-chip" data-chip="CLIENT_OVERRUN">🔵 Client Over SLA (&gt; 10 WD)</button>
+        <button class="quick-chip" data-chip="IMPROPER_ONLY">🟣 Improperly Planned (&le; 10 WD)</button>
+        <button class="quick-chip" data-chip="FAST_TRACK">⚡ Fast-Track Corridor</button>
+        <button class="quick-chip" data-chip="MET_ONLY">✅ Met Plan Only</button>
+      </div>
+
+    </section>
+
+    <!-- Table Section -->
+    <section class="table-section" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; margin-bottom: 40px;">
+      
+      <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Evaluated Revision Transitions Registry</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">Showing <span id="tableShowingCount">0</span> of <span id="tableTotalFilteredCount">0</span> filtered transitions</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label style="font-size: 0.8rem; color: var(--text-secondary);">Page Size:</label>
+          <select id="pageSizeSelect" style="padding: 5px 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.8rem;">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive" style="overflow-x: auto;">
+        <table class="data-table" id="analyticsTable" style="width: 100%; border-collapse: collapse; font-size: 0.83rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: center; color: var(--text-secondary); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.4px;">
+              <th style="padding: 8px 6px; cursor: pointer; text-align: left; white-space: nowrap;" data-sort="doc_no">Doc No.</th>
+              <th style="padding: 8px 6px; text-align: left; white-space: nowrap;">Title &amp; Discipline</th>
+              <th style="padding: 8px 4px; cursor: pointer; text-align: center; white-space: nowrap; width: 110px;" data-sort="transition_type">Transition</th>
+              <th style="padding: 8px 5px; cursor: pointer; text-align: center; white-space: normal; line-height: 1.25;" data-sort="plan_wd">Plan<br>WD</th>
+              <th style="padding: 8px 5px; cursor: pointer; text-align: center; white-space: normal; line-height: 1.25;" data-sort="actual_cycle_wd">Actual<br>WD</th>
+              <th style="padding: 8px 5px; cursor: pointer; text-align: center; white-space: normal; line-height: 1.25;" data-sort="cycle_variance_wd">Variance</th>
+              <th style="padding: 8px 5px; cursor: pointer; text-align: center; white-space: normal; line-height: 1.25;" data-sort="client_rev_wd">Client Rev<br>WD</th>
+              <th style="padding: 8px 5px; cursor: pointer; text-align: center; white-space: normal; line-height: 1.25;" data-sort="cont_inc_wd">Cont Incorp<br>WD</th>
+              <th style="padding: 8px 5px; text-align: center; white-space: normal; line-height: 1.25;">Allowable<br>Extended ℹ️</th>
+              <th style="padding: 8px 6px; text-align: center; white-space: normal; line-height: 1.25;">Delay<br>Attribution</th>
+              <th style="padding: 8px 8px; text-align: center; white-space: nowrap; width: 110px; min-width: 110px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="analyticsTableBody">
+            <!-- Dynamic rows injected by app_analytics.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 12px;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);" id="paginationInfo">Page 1 of 1</div>
+        <div style="display: flex; gap: 6px;">
+          <button id="prevPageBtn" class="action-btn" style="padding: 6px 12px; font-size: 0.8rem;">&laquo; Previous</button>
+          <button id="nextPageBtn" class="action-btn" style="padding: 6px 12px; font-size: 0.8rem;">Next &raquo;</button>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- Slide-out Detail Drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="detail-drawer" id="analyticsDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title-area">
+        <span class="badge-tag live-badge" id="drawerTransitionBadge">IFR ➔ AFC</span>
+        <h2 id="drawerDocNo" style="font-size: 1.1rem; margin: 4px 0;">MM-ZTK-1F-GEN-...</h2>
+        <div id="drawerDocTitle" style="font-size: 0.85rem; color: var(--text-secondary);">Document Title</div>
+      </div>
+      <button class="close-drawer-btn" id="closeDrawerBtn">&times;</button>
+    </div>
+
+    <div class="drawer-body" id="drawerContent">
+      <!-- Injected by app_analytics.js -->
+    </div>
+  </aside>
+
+  <!-- SLA & Criteria Explanation Modal -->
+  <div class="modal-backdrop" id="slaDefModal" style="display: none;">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">ℹ️</span>
+          <h3 style="margin: 0; font-size: 1.15rem;">Contractual SLA, Incorporation Rights & Delay Attribution Rules</h3>
+        </div>
+        <button class="close-modal-btn" id="closeSlaDefModalBtn">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+        
+        <h4 style="color: var(--text-primary); margin-top: 0;">1. Contractual Client Review SLA (10 Working Days)</h4>
+        <p>The contractual benchmark for Client engineering review turnaround is strictly <strong>10 Working Days (Monday–Friday, excluding weekends)</strong> from receipt of transmittal (<code>Actual Submit In</code>) to return of transmittal (<code>Actual Submit Out</code>). If review &le; 10 WD, Client passed SLA. If review &gt; 10 WD, Client exceeded SLA.</p>
+
+        <h4 style="color: var(--text-primary);">2. Contractor Planned Incorporation Allowance & Entitlement Rights</h4>
+        <p>In the Contractor's Rebaseline Plan, the planned duration ($\Delta T_{\text{plan}}$) between consecutive revisions implicitly accounts for Client's 10 WD review. Therefore, the Contractor's entitled incorporation allowance is:</p>
+        <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 6px; font-family: monospace; color: #818cf8; margin: 8px 0;">
+          Contractor Planned Allowance = max(0, Plan Cycle WD - 10 WD)
+        </div>
+        <p><strong>Crucial Contractual Rule:</strong> If Client takes longer than 10 WD (e.g. 15 WD), the Contractor maintains the right to their full planned incorporation duration. Thus, the <strong>Allowable Extended Cycle</strong> before Contractor is considered in delay is:</p>
+        <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 6px; font-family: monospace; color: #34d399; margin: 8px 0;">
+          Allowable Extended Cycle = Actual Client Review WD + Contractor Planned Allowance
+        </div>
+        <p>If Contractor submits within this allowable cycle, the delay is <strong>100% attributable to Late Client Review</strong>, not Contractor!</p>
+
+        <h4 style="color: var(--text-primary);">3. Delay Root Cause Attribution Decision Tree</h4>
+        <ul style="padding-left: 20px;">
+          <li><strong style="color: #c4b5fd;">(1) Improperly Planned (Baseline Scheduling Flaw):</strong> Plan Cycle &le; 10 WD. The Contractor scheduled Revision N+1 within &le; 10 working days of Revision N. Since the Client is contractually entitled to 10 WD for review, this left &le; 0 working days for Contractor engineers to incorporate comments. The plan was doomed to fail before execution started.</li>
+          <li><strong style="color: #fbbf24;">(2) Late Contractor Incorp (Discipline Execution Flaw):</strong> Client completed review within contractual SLA (&le; 10 WD), but the Contractor's engineering discipline took longer than their planned incorporation allowance to re-submit.</li>
+          <li><strong style="color: #38bdf8;">(3) Late Client Review (Client SLA Overrun):</strong> Actual Cycle &gt; Plan Cycle, BUT Actual Cycle &le; Allowable Extended Cycle (Client took &gt; 10 WD; Contractor used their entitled time). The entire delay is solely attributable to Client review.</li>
+          <li><strong style="color: #f87171;">(4) Compound Delay (Shared Overrun):</strong> Both Client review took &gt; 10 WD AND Contractor took &gt; planned incorporation allowance (exact days quantified per party).</li>
+        </ul>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">
+          <em>Note: (1) and (2) are separated because (1) reflects a structural planning failure by the Contractor's planning team (allocating zero incorporation time), whereas (2) reflects an execution bottleneck by the engineering disciplines (exceeding a valid incorporation window). Both are Contractor responsibilities.</em>
+        </p>
+
+        <h4 style="color: var(--text-primary);">4. Macro Evaluation Justification Rule</h4>
+        <p>If the percentage of delayed transitions driven by Contractor incorporation overruns (Late Contractor + Compound Delay) exceeds <strong>50%</strong>, it confirms that the Contractor's Rebaseline Plan was systematically over-optimistic across the board.</p>
+
+      </div>
+      <div class="modal-footer" style="text-align: right; padding-top: 14px; border-top: 1px solid var(--border-color);">
+        <button class="action-btn primary" id="closeSlaDefModalBtn2">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div class="modal-backdrop" id="uploadModal" style="display: none;">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 style="margin: 0; font-size: 1.1rem;">📁 Upload Weekly Excel Report</h3>
+        <button class="close-modal-btn" id="closeUploadModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="dropZone" style="border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px; color: #38bdf8;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <div style="font-weight: 600; margin-bottom: 6px;">Drag & Drop Excel File Here</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">MDR (.xlsx), Technical Log (.xlsx), or Vendor Log (.xls/.xlsx)</div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+          <button class="action-btn" type="button" onclick="document.getElementById('fileInput').click()">Browse File</button>
+        </div>
+        <div id="uploadStatus" style="margin-top: 14px; font-size: 0.85rem; display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Manager & Multi-Project Dataset Bootstrapper -->
+  <script src="project_manager.js"></script>
+  <script>
+    (function() {
+      var proj = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
+      var src = (proj === 'ASK') ? 'data/ask/analytics_data.js' : 'data/z1f/analytics_data.js';
+      document.write('<script src="' + src + '"><\/script>');
+    })();
+  </script>
+  <!-- Application Controller -->
+  <script src="app_analytics.js"></script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Z1F Document Review Duration Dashboard | Contractor vs Client Tracking</title>
+  <meta name="description" content="Technical Document review duration tracking dashboard for Z1F Project. Monitors submittal turnaround and Client review times.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Top Nav: Switch between dashboards -->
+    <nav class="hub-nav">
+      <div class="hub-nav-brand">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #0284c7; display: inline-block;"></span>
+        <span>Z1F and ASK Project Document Intelligence Hub</span>
+      </div>
+      <div class="hub-nav-links">
+        <a href="index.html" class="nav-tab-link active-tech">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Technical Log Dashboard
+        </a>
+        <a href="index_vendor.html" class="nav-tab-link">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+          Vendor Document Log Dashboard
+        </a>
+        <a href="index_mdr.html" class="nav-tab-link">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+          Deliverable Revision Lifecycle Dashboard
+        </a>
+        <a href="index_analytics.html" class="nav-tab-link">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Analytic Evaluation (Rebaseline vs Actual)
+        </a>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1><span id="projectHeaderTitlePrefix">Z1F</span> Technical Document Review Duration Dashboard</h1>
+          <div class="brand-subtitle">
+            <span class="badge-tag" id="headerReportDate">Report Date: 16-Oct-2026</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Project Switcher Pill Group (Z1F vs ASK) -->
+        <div id="projectSwitcher" class="project-switcher-container"></div>
+        <button id="openSlaDefBtn" class="btn-sla-info" title="What is SLA? Service Level Agreement Definition">
+          ℹ️ What is SLA?
+        </button>
+        <button id="openUploadBtn" class="btn-upload-nav" title="Upload New Weekly Cut-Off Excel File">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload New File
+        </button>
+        <button id="exportCsvBtn" class="btn btn-secondary" title="Export filtered documents to CSV">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
+        <button id="resetFiltersBtn" class="btn btn-secondary" title="Reset all applied filters">
+          Reset Filters
+        </button>
+        <button id="themeToggleBtn" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Contractor Scope Navigation Bar (4 Contractor Sets + Combined) -->
+    <nav class="contractor-scope-nav" id="contractorScopeNav" aria-label="Contractor Scope Filter">
+      <div class="contractor-nav-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        Contractor:
+      </div>
+      <button class="contractor-tab active" data-contractor="ALL" id="tabContAll">
+        All Contractors <span class="tab-badge" id="tabCountContAll">3,780</span>
+      </button>
+      <button class="contractor-tab" data-contractor="Topside without Structure" id="tabContTopsideNoStr">
+        Topside without Structure <span class="tab-badge" id="tabCountContTopsideNoStr">1,179</span>
+      </button>
+      <button class="contractor-tab" data-contractor="Jacket & Piles" id="tabContJacket">
+        Jacket &amp; Piles <span class="tab-badge" id="tabCountContJacket">1,073</span>
+      </button>
+      <button class="contractor-tab" data-contractor="Topside Structure" id="tabContTopsideStr">
+        Topside Structure <span class="tab-badge" id="tabCountContTopsideStr">420</span>
+      </button>
+      <button class="contractor-tab" data-contractor="WP2 Pipeline" id="tabContPipeline">
+        WP2 Pipeline <span class="tab-badge" id="tabCountContPipeline">416</span>
+      </button>
+      <button class="contractor-tab" data-contractor="Project Management & Ops" id="tabContPJM">
+        PMT &amp; Operations <span class="tab-badge" id="tabCountContPJM">611</span>
+      </button>
+    </nav>
+
+    <!-- Document Category Navigation Bar -->
+    <nav class="doc-category-nav" id="docCategoryNav" aria-label="Document Category Filter">
+      <div class="doc-category-nav-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+        Category:
+      </div>
+      <button class="doc-category-tab active" data-category-scope="ALL" id="tabPartAll">
+        All Categories <span class="tab-badge" id="tabCountPartAll">3,780</span>
+      </button>
+      <button class="doc-category-tab focus-part-b" data-category-scope="Part B - Engineering Doc" id="tabPartB">
+        Part B - Engineering Doc <span class="tab-badge" id="tabCountPartB">1,440</span>
+      </button>
+      <button class="doc-category-tab" data-category-scope="Part C - Engineering Dwg" id="tabPartC">
+        Part C - Engineering Dwg <span class="tab-badge" id="tabCountPartC">1,725</span>
+      </button>
+      <button class="doc-category-tab" data-category-scope="Part A - Project Management Doc" id="tabPartA">
+        Part A - Project Mgmt Doc <span class="tab-badge" id="tabCountPartA">503</span>
+      </button>
+      <button class="doc-category-tab" data-category-scope="Part E - Fabrication Doc" id="tabPartE">
+        Part E - Fabrication Doc <span class="tab-badge" id="tabCountPartE">73</span>
+      </button>
+    </nav>
+
+    <!-- Filter Bar -->
+    <section class="filter-bar" aria-label="Dashboard Filters">
+      <div class="filter-row">
+        <!-- Search Input -->
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by Document No, Title, Submittal ID...">
+        </div>
+
+        <!-- Discipline Select -->
+        <select id="disciplineSelect" class="select-filter" aria-label="Filter by Discipline">
+          <option value="ALL">All Disciplines (17)</option>
+        </select>
+
+        <!-- Revision Select -->
+        <select id="revSelect" class="select-filter" aria-label="Filter by Revision">
+          <option value="ALL">All Revisions</option>
+        </select>
+
+        <!-- Return Status Select -->
+        <select id="statusSelect" class="select-filter" aria-label="Filter by Return Status">
+          <option value="ALL">All Return Statuses</option>
+        </select>
+      </div>
+
+      <!-- Quick Category Pills -->
+      <div class="filter-row">
+        <div class="category-pills" id="categoryPills">
+          <button class="pill-btn active" data-category="ALL">
+            All Submissions <span class="pill-count" id="countAll">3,046</span>
+          </button>
+          <button class="pill-btn pill-within" data-category="<= 10 Days">
+            <span style="color:#10b981;">●</span> Within 10 Working Days (&le; 10 WD) <span class="pill-count" id="countWithin">1,579</span>
+          </button>
+          <button class="pill-btn pill-over" data-category="> 10 Days">
+            <span style="color:#f43f5e;">●</span> Over 10 Working Days (> 10 WD) <span class="pill-count" id="countOver">1,078</span>
+          </button>
+          <button class="pill-btn pill-pending" data-category="Pending">
+            <span style="color:#f59e0b;">●</span> Pending Review <span class="pill-count" id="countPending">389</span>
+          </button>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);" id="filterStatusText">
+          Showing 3,046 submissions
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Metric Cards Grid -->
+    <section class="kpi-grid" aria-label="Key Performance Indicators">
+      <!-- Total Submissions -->
+      <div class="kpi-card" style="--card-accent: #6366f1;">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Submissions</span>
+          <div class="kpi-icon-wrap" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+            📋
+          </div>
+        </div>
+        <div class="kpi-value" id="kpiTotal">3,046</div>
+        <div class="kpi-meta">
+          <span>Unique Documents: <strong id="kpiUniqueDocs">1,426</strong></span>
+          <span class="badge-tag">100%</span>
+        </div>
+      </div>
+
+      <!-- Within 10 Working Days -->
+      <div class="kpi-card" style="--card-accent: #10b981;">
+        <div class="kpi-header">
+          <span class="kpi-title">Within 10 Working Days</span>
+          <div class="kpi-icon-wrap" style="background: var(--color-within10-bg); color: var(--color-within10);">
+            ✓
+          </div>
+        </div>
+        <div class="kpi-value" style="color: var(--color-within10);" id="kpiWithin10">1,579</div>
+        <div class="kpi-meta">
+          <span>Meet Agreement (&le; 10 Working Days)</span>
+          <span class="kpi-badge badge-within10" id="kpiWithinPct">59.4%</span>
+        </div>
+      </div>
+
+      <!-- Over 10 Working Days -->
+      <div class="kpi-card" style="--card-accent: #f43f5e;">
+        <div class="kpi-header">
+          <span class="kpi-title">Over 10 Working Days</span>
+          <div class="kpi-icon-wrap" style="background: var(--color-over10-bg); color: var(--color-over10);">
+            ⚠
+          </div>
+        </div>
+        <div class="kpi-value" style="color: var(--color-over10);" id="kpiOver10">1,078</div>
+        <div class="kpi-meta">
+          <span>Review Delay (> 10 Working Days)</span>
+          <span class="kpi-badge badge-over10" id="kpiOverPct">40.6%</span>
+        </div>
+      </div>
+
+      <!-- Pending / Under Review -->
+      <div class="kpi-card" style="--card-accent: #f59e0b;">
+        <div class="kpi-header">
+          <span class="kpi-title">In Review / Pending</span>
+          <div class="kpi-icon-wrap" style="background: var(--color-pending-bg); color: var(--color-pending);">
+            ⏳
+          </div>
+        </div>
+        <div class="kpi-value" style="color: var(--color-pending);" id="kpiPending">389</div>
+        <div class="kpi-meta">
+          <span>Awaiting Client Submit Out</span>
+          <span class="kpi-badge badge-pending" id="kpiPendingPct">12.8%</span>
+        </div>
+      </div>
+
+      <!-- Average Review Duration -->
+      <div class="kpi-card" style="--card-accent: #06b6d4;">
+        <div class="kpi-header">
+          <span class="kpi-title">Avg Review Duration</span>
+          <div class="kpi-icon-wrap" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
+            ⏱
+          </div>
+        </div>
+        <div class="kpi-value" style="color: var(--color-cyan);" id="kpiAvgDuration">10.2 <span style="font-size: 16px; font-weight: 500;">Working Days</span></div>
+        <div class="kpi-meta">
+          <span>Median: <strong id="kpiMedianDuration">10.0 WD</strong></span>
+          <a href="javascript:void(0)" id="slaBadgeBtn" class="sla-badge-interactive" title="Click to view full Service Level Agreement (SLA) Definition">
+            Within Agreement (SLA &le; 10 WD) ℹ️
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visual Charts Grid -->
+    <div class="charts-grid">
+      <!-- Donut Chart: Review Category SLA Distribution -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Review Duration Agreement Breakdown</h2>
+            <div class="card-subtitle">Distribution of completed reviews (&le; 10 working days vs &gt; 10 working days) and pending</div>
+          </div>
+        </div>
+        <div class="chart-container" id="donutChartContainer">
+          <!-- Rendered via JavaScript SVG -->
+        </div>
+      </div>
+
+      <!-- Duration Histogram Tiers -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Review Duration Distribution Tiers</h2>
+            <div class="card-subtitle">Click any tier to view its disciplines &amp; documents breakdown</div>
+          </div>
+          <div id="activeTierBadge" style="display:none;">
+            <span class="badge-tag" style="background:rgba(99,102,241,0.2);color:#818cf8;border-color:rgba(99,102,241,0.4);cursor:pointer;" id="clearTierFilterBtn" title="Click to clear tier filter">
+              Tier Filter Active &times;
+            </span>
+          </div>
+        </div>
+        <div class="chart-container" id="tierChartContainer">
+          <!-- Rendered via JavaScript SVG -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Discipline Review Breakdown Table Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Discipline Review Classification &amp; Meet Agreement</h2>
+          <div class="card-subtitle">Click any discipline row to filter the document details below</div>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+          Engineering Disciplines Tracked
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="discipline-summary-table" id="disciplineTable">
+          <thead>
+            <tr>
+              <th>Discipline</th>
+              <th style="text-align: right;">Total</th>
+              <th style="text-align: right; color: var(--color-within10);">&le; 10 Days</th>
+              <th style="text-align: right; color: var(--color-within10);">Meet Agreement %</th>
+              <th style="text-align: right; color: var(--color-over10);">&gt; 10 Days</th>
+              <th style="text-align: right; color: var(--color-pending);">Pending</th>
+              <th style="text-align: right;">Avg Days</th>
+              <th style="width: 180px;">Review Distribution</th>
+            </tr>
+          </thead>
+          <tbody id="disciplineTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Revision Analysis Grid -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Revision Lifecycle Turnaround (A1, B1, C1, C2...)</h2>
+          <div class="card-subtitle">Analysis of review duration as documents progress through revisions</div>
+        </div>
+      </div>
+      <div class="chart-container" id="revChartContainer" style="min-height: 180px;">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+
+    <!-- Main Documents Table Card -->
+    <div class="card table-card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Document Review Details</h2>
+          <div class="card-subtitle" id="tableRecordCountText">Showing 1 - 25 of 3,046 submissions</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="pageSizeSelect" style="font-size: 12px; color: var(--text-muted);">Rows per page:</label>
+          <select id="pageSizeSelect" class="select-filter" style="min-width: 80px; padding: 6px 10px;">
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="mainDocTable">
+          <thead>
+            <tr>
+              <th data-sort="doc_no">Document No.</th>
+              <th data-sort="rev" style="text-align: center;">Rev</th>
+              <th data-sort="discipline_name">Discipline</th>
+              <th data-sort="doc_title">Document Title</th>
+              <th data-sort="actual_submit_in">Contractor Submit In</th>
+              <th data-sort="actual_submit_out">Client Submit Out</th>
+              <th data-sort="duration_days" style="text-align: right;">Duration</th>
+              <th data-sort="category" style="text-align: center;">Category</th>
+              <th data-sort="return_status_code" style="text-align: center;">Return Status</th>
+              <th style="text-align: center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div class="pagination-bar">
+        <div class="pagination-info" id="paginationInfo">
+          Page 1 of 122
+        </div>
+        <div class="pagination-controls" id="paginationControls">
+          <!-- Dynamically generated page buttons -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Revision History Drawer Modal -->
+  <div class="drawer-backdrop" id="drawerBackdrop">
+    <div class="drawer" id="historyDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerDocNo">
+      <div class="drawer-header">
+        <div>
+          <div class="drawer-title" id="drawerDocNo">Document Number</div>
+          <div class="drawer-subtitle" id="drawerDocTitle">Document Title</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+            Discipline: <span id="drawerDiscipline" style="color: var(--text-primary); font-weight: 600;">-</span> &bull; 
+            Total Revisions: <span id="drawerRevCount" style="color: var(--color-brand); font-weight: 700;">-</span>
+          </div>
+        </div>
+        <button class="drawer-close" id="drawerCloseBtn" aria-label="Close Drawer">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">
+          Revision Lifecycle & Review Turnaround
+        </h3>
+        <div class="timeline" id="drawerTimeline">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Duration Tier Breakdown & Documents Modal -->
+  <div class="tier-modal-backdrop" id="tierModalBackdrop">
+    <div class="tier-modal" id="tierModal" role="dialog" aria-modal="true" aria-labelledby="tierModalTitle">
+      <div class="tier-modal-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <h2 class="tier-modal-title" id="tierModalTitle">Review Duration Tier Details</h2>
+            <span class="badge-tag" id="tierModalCountBadge" style="font-size:12px;padding:3px 10px;font-weight:700;">-</span>
+          </div>
+          <div class="tier-modal-subtitle" id="tierModalSubtitle">
+            Detailed breakdown of disciplines and documents in this review turnaround tier
+          </div>
+        </div>
+        <button class="drawer-close" id="tierModalCloseBtn" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <div class="tier-modal-body">
+        <!-- Section 1: Disciplines in this Tier -->
+        <div class="tier-section">
+          <div class="tier-section-header">
+            <h3>Disciplines in this Tier</h3>
+            <span style="font-size:12px;color:var(--text-muted);" id="tierDiscHelpText">Click any discipline to filter documents below</span>
+          </div>
+          <div class="tier-discipline-chips" id="tierDisciplineChips">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Section 2: Documents in this Tier -->
+        <div class="tier-section">
+          <div class="tier-section-header">
+            <div style="display:flex;align-items:center;gap:12px;width:100%;justify-content:space-between;flex-wrap:wrap;">
+              <h3 id="tierDocListHeading">Documents List</h3>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <input type="text" id="tierDocSearchInput" class="search-input" placeholder="Search in this tier..." style="padding:6px 12px;width:220px;font-size:12px;">
+                <button id="btnFilterMainByTier" class="btn btn-primary" style="padding:6px 14px;font-size:12px;" title="Filter the main dashboard table to this tier">
+                  Filter Main Dashboard &darr;
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+            <table class="data-table" id="tierDocTable">
+              <thead>
+                <tr>
+                  <th>Document No.</th>
+                  <th style="text-align:center;">Rev</th>
+                  <th>Discipline</th>
+                  <th>Title</th>
+                  <th>Contractor Submit In</th>
+                  <th>Client Submit Out</th>
+                  <th style="text-align:right;">Duration</th>
+                  <th style="text-align:center;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="tierDocTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLA Definition Modal -->
+  <div id="slaModalBackdrop" class="tier-modal-backdrop">
+    <div class="tier-modal" style="max-width: 680px;" role="dialog" aria-modal="true">
+      <div class="tier-modal-header" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(56, 189, 248, 0.08));">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+            ℹ️
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Service Level Agreement (SLA) Definition</h3>
+            <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">Z1F Project Procedural Engineering Turnaround Standards</p>
+          </div>
+        </div>
+        <button id="slaModalCloseBtn" class="drawer-close" aria-label="Close Modal">&times;</button>
+      </div>
+      <div class="tier-modal-body" style="padding: 24px; line-height: 1.6; font-size: 13px; color: var(--text-secondary);">
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 6px 0; color: #34d399; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            <span>🎯</span> Contractual Baseline: 10 Working Days
+          </h4>
+          <p style="margin: 0; color: var(--text-primary);">
+            <strong>SLA</strong> stands for <strong>Service Level Agreement</strong>. In the Z1F Project, the SLA defines the maximum contractual turnaround period allowed for the <strong>Client Engineering Team</strong> to review and officially return submitted technical &amp; vendor deliverables.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: #10b981; display: block; margin-bottom: 4px;">✓ Meet Agreement (&le; 10 WD)</strong>
+            <span>Review completed and officially returned with status code (APPR, AWC, etc.) within <strong>10 working days</strong> (Mon&ndash;Fri, excluding weekends).</span>
+          </div>
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: #f43f5e; display: block; margin-bottom: 4px;">⚠ Over Agreement (> 10 WD)</strong>
+            <span>Review elapsed time exceeds 10 working days, triggering overdue tracking and potential schedule delay claim liabilities.</span>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 6px;">How Working Days are Counted:</strong>
+          <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: var(--text-secondary);">
+            <li><strong>Starts</strong>: The first business day following official receipt date (<code>Actual Submit In</code>).</li>
+            <li><strong>Counted</strong>: Monday through Friday only. Saturdays and Sundays are excluded.</li>
+            <li><strong>Ends</strong>: The date the review status is officially issued out (<code>Actual Submit Out</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload New Cut-Off Report Modal -->
+  <div id="uploadModalBackdrop" class="tier-modal-backdrop">
+    <div class="tier-modal" style="max-width: 640px;" role="dialog" aria-modal="true">
+      <div class="tier-modal-header" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.08));">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+            📁
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Upload New Weekly Cut-Off Report</h3>
+            <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">Auto-detects and updates dashboard with latest Excel data</p>
+          </div>
+        </div>
+        <button id="uploadModalCloseBtn" class="drawer-close" aria-label="Close Modal">&times;</button>
+      </div>
+      <div class="tier-modal-body" style="padding: 24px;">
+        <div id="uploadDropzone" class="upload-dropzone">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" style="margin-bottom: 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <h4 style="margin: 0 0 6px 0; font-size: 15px; color: var(--text-primary);">Drag &amp; Drop your new Excel Report here</h4>
+          <p style="margin: 0 0 16px 0; font-size: 12px; color: var(--text-secondary);">
+            Supports Technical Log (<code>.xlsx</code>), Vendor Log (<code>.xls/.xlsx</code>), or EDSR Register (<code>.xlsx/.xlsm</code>)
+          </p>
+          <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.xlsm" style="display: none;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileUploadInput').click()">
+            Browse Files...
+          </button>
+        </div>
+
+        <div id="uploadStatusBox" style="display: none; margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 13px;">
+          <!-- Dynamic feedback -->
+        </div>
+
+        <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted); line-height: 1.5; border-top: 1px solid var(--border-color); padding-top: 14px;">
+          💡 <strong>Automatic Date Detection:</strong> Weekly filenames with changing dates (e.g. <code>Z1F Technical Document Log Report - 16 Oct 26.xlsx</code> or <code>Z1F Vendor Document Log Report - 16 Oct 26.xls</code>) are automatically parsed, recalculated with 10 working days criteria, and reflected immediately on this dashboard.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Manager & Multi-Project Dataset Bootstrapper -->
+  <script src="project_manager.js"></script>
+  <script>
+    (function() {
+      var proj = window.ZDocProjectManager ? window.ZDocProjectManager.getActiveProject() : 'Z1F';
+      var src = (proj === 'ASK') ? 'data/ask/data.js' : 'data/z1f/data.js';
+      document.write('<script src="' + src + '"><\/script>');
+    })();
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
